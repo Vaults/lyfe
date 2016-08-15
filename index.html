@@ -1,0 +1,25 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html lang="en" ng-app="life">
+<head>
+  <meta charset="utf-8">
+  <title>TESTERUUU</title>
+  <script src="js/lib/jquery-1.12.0.min.js"></script>
+  <script src="js/lib/angular.min.js"></script>
+  
+</head>
+
+<body ng-controller="testCtrl">
+	<table style="border: 1px solid black">
+		<tr ng-repeat="row in field">
+			<td ng-repeat="c in row track by $index">{{c}}</td>
+		</tr>
+	</table>
+</body>
+
+<script type="text/javascript">
+	angular.module('life', []);
+</script>
+<script src="js/main.js"></script>
+
+</html>
