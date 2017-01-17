@@ -1,0 +1,33 @@
+table.mainTable{
+    border: 2px solid black;
+    border-spacing: inherit;
+    margin-left: auto;
+    margin-right: auto;
+}
+table.mainTable tr{
+    font-family: sans-serif;
+    margin: 0px;
+}
+.cont{
+    width: 18px;
+    height: 18px;
+    border: 1px solid #DDDDDD;
+    margin: -1px;
+    text-align: center;
+}
+.red{
+    background-color: darkred;
+    color: white;
+}
+.blue{
+    background-color: darkblue;
+    color: white;
+}
+.green{
+    background-color: darkgreen;
+    color: white;
+}
+.purple{
+    background-color: darkslateblue;
+    color: white;
+}

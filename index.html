@@ -6,20 +6,20 @@
   <title>TESTERUUU</title>
   <script src="js/lib/jquery-1.12.0.min.js"></script>
   <script src="js/lib/angular.min.js"></script>
-  
+  <link rel="stylesheet" href="css.css" type="text/css">
 </head>
 
 <body ng-controller="testCtrl">
-	<table style="border: 1px solid black">
+	<table class="mainTable">
 		<tr ng-repeat="row in field">
-			<td ng-repeat="c in row track by $index">{{c}}</td>
+			<td ng-repeat="c in row track by $index">
+				<div class="cont" ng-class="c.col">{{c.char}}</div>
+			</td>
+
 		</tr>
 	</table>
 </body>
 
-<script type="text/javascript">
-	angular.module('life', []);
-</script>
 <script src="js/main.js"></script>
 
 </html>
