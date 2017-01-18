@@ -11,7 +11,7 @@ table.mainTable tr{
 .cont{
     width: 18px;
     height: 18px;
-    border: 1px solid #DDDDDD;
+    border: 1px solid #80e080;
     margin: -1px;
     text-align: center;
 }
@@ -30,4 +30,10 @@ table.mainTable tr{
 .purple{
     background-color: darkslateblue;
     color: white;
+}
+.light-green{
+    background-color: lightgreen;
+}
+.light-blue{
+    background-color: royalblue;
 }
