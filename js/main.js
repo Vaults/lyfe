@@ -1,5 +1,5 @@
 angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
-    var s = 10;
+    var s = 50;
     var maxCritterCount = s;
     var moveChance = 0.30;
     var seqChance = 0.00001;
@@ -108,6 +108,7 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
 
             if(surr.length > 0){
                 //oh no run away
+
                 this.sequences.startSequence('moveLine', {x:-(surr[0][0]), y:-(surr[0][1])});
             } else if(!this.sequences.inSequence()){
                 if(rand(10000) < 5){
@@ -127,12 +128,9 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
             return ret;
         }
     });
-    var emptyTile = (x, y) => tile(' ', 'light-green', x, y);
+    var emptyTile = (x, y) => tile(' ', 'lightgreen', x, y);
     var wallTile = (x,y) => tile(' ', 'green',x,y);
-    var alpha = [
-        {char: 'x', col: 'red'},
-        {char: 'o', col: 'blue'},
-        {char: 'a', col: 'purple'}];
+    var alpha = ['x', 'a', 'o', 'c', 'e', 'u', 'z', 'n', 'w', 'v', '#', '@', '€', '^', '-', '+', '=', ''];
 
     var objs = '';
 
@@ -173,7 +171,7 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
             var a = pickRandom(alpha);
             var x = rand(s - 1);
             var y = rand(s - 1);
-            objs[x][y] = critter(a.char, a.col, x, y);
+            objs[x][y] = critter(a, 'hsl('+rand(0,360)+', 60%, 30%)' , x, y);
         }
 
         $scope.field = new Array(s).fill('').map(

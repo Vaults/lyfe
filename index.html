@@ -14,7 +14,7 @@
 		<table class="mainTable">
 			<tr ng-repeat="row in field">
 				<td ng-repeat="c in row track by $index">
-					<div class="cont" ng-class="c.col">{{c.char}}</div>
+					<div class="cont" style="background-color: {{c.col}}">{{c.char}}</div>
 				</td>
 			</tr>
 		</table>

@@ -14,29 +14,8 @@ table.mainTable tr{
     border: 1px solid #80e080;
     margin: -1px;
     text-align: center;
+    color: white !important;
     font-size: small;
-}
-.red{
-    background-color: darkred;
-    color: white;
-}
-.blue{
-    background-color: darkblue;
-    color: white;
-}
-.green{
-    background-color: darkgreen;
-    color: white;
-}
-.purple{
-    background-color: darkslateblue;
-    color: white;
-}
-.light-green{
-    background-color: lightgreen;
-}
-.light-blue{
-    background-color: royalblue;
 }
 .loading{
     text-align: center;
