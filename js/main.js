@@ -1,25 +1,16 @@
 angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
-    var s = 25;
-    var maxCritterCount = 15;
-    var moveChance = 0.10;
-    var FPS = 60;
+    var s = 10;
+    var maxCritterCount = s;
+    var moveChance = 0.30;
+    var seqChance = 0.00001;
+    var FPS = 30;
+    var noWalls = !true;
+    var wallFactor = 0.6;
 
     var tile = (c, cl, x, y) => ({
         char: c, col: cl, x: x, y: y,
     });
     var critter = (c, cl, x, y)=> $.extend(tile(c, cl, x, y), {
-        moveRandom: function () {
-            var xfac = 0
-            var yfac = 0;
-            if (rand(1 / moveChance) < 1) {
-                if (rand(1) > 0) {
-                    xfac = randNeg(rand(1));
-                } else {
-                    yfac = randNeg(rand(1));
-                }
-            }
-            return {x: xfac, y: yfac};
-        },
         sequences: {
             currSequence: {
                 state: false,
@@ -30,14 +21,15 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
             inSequence: function(){
                 return this.currSequence.state;
             },
-            startSequence: function(f){
+            startSequence: function(f, par){
                 var p = this[f].maxPhase;
                 this.currSequence = {
                     state: true,
                     sequence: f,
                     phase: 0,
-                    maxPhase: p
-                }
+                    maxPhase: p,
+                    parameters: par
+                };
             },
             endSequence: function() {
                 this.currSequence = {
@@ -54,7 +46,7 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
                 return this.currSequence.phase == this.currSequence.maxPhase;
             },
             run: function() {
-                var ret = this[this.currSequence.sequence].f(this.currSequence.phase);
+                var ret = this[this.currSequence.sequence].f(this.currSequence.phase, this.currSequence.parameters);
                 this.incPhase();
                 if (this.isDone()) {
                     this.endSequence();
@@ -63,7 +55,7 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
             },
 
             moveBlock: {
-                'f': (p) => {
+                'f': (p, par) => {
                     var dirs = {
                         "0": {x: 1, y: 0},
                         "1": {x: 1, y: 0},
@@ -78,52 +70,104 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
                 }, maxPhase: 7
             },
             moveLine: {
-                'f': (p) => {
-                    var dirs = {
-                        "0": {x: 1, y: 0},
-                        "1": {x: 1, y: 0},
-                        "2": {x: 1, y: 0},
-                        "3": {x: 1, y: 0},
-                        "4": {x: -1, y: 0},
-                        "5": {x: -1, y: 0},
-                        "6": {x: -1, y: 0},
-                        "7": {x: -1, y: 0},
-                    }
-                    return dirs[p];
-                }, maxPhase: 7
+                'f': (p, par) => {
+                    return par;
+                }, maxPhase: 5
             },
+            moveRandom: {
+                'f': (p, par) =>{
+                    var xfac = 0
+                    var yfac = 0;
+                    if (rand(1 / moveChance) < 1) {
+                        if (rand(1) > 0) {
+                            xfac = randNeg(rand(1));
+                        } else {
+                            yfac = randNeg(rand(1));
+                        }
+                    }
+                    return {x: xfac, y: yfac};
+                }, maxPhase: 1
+            },
+            moveStill:{'f':(p,par)=>({x:0,y:0}),maxPhase:1}
         },
 
-
+        senseSurroundings: (x,y) => {
+            var ret = [];
+            for(var i = -1; i <= 1; i++){
+                for(var j = -1; j <= 1; j++){
+                    if(objs[x + i] && objs[x+i][y+j] && objs[x+i][y+j].move && Math.abs(i) != Math.abs(j)){
+                        ret.push([i,j]);
+                    }
+                }
+            }
+          return ret;
+        },
         move: function () {
             var mod = {x: 0, y: 0};
-            if (!this.sequences.inSequence()) {
-                if(rand(1000) < 1) {
+            var surr = this.senseSurroundings(this.x, this.y);
+
+            if(surr.length > 0){
+                //oh no run away
+                this.sequences.startSequence('moveLine', {x:-(surr[0][0]), y:-(surr[0][1])});
+            } else if(!this.sequences.inSequence()){
+                if(rand(10000) < 5){
                     this.sequences.startSequence('moveBlock');
-                }else if(rand(1000) < 2) {
-                    this.sequences.startSequence('moveLine');
-                }else{
-                    mod = this.moveRandom();
+                }else {
+                    this.sequences.startSequence('moveRandom');
                 }
-            }else {
-                mod = this.sequences.run();
             }
 
-            return {
+            mod = this.sequences.run();
+
+
+            var ret = {
                 'from': this,
                 'to': {x: clamp(0, this.x + mod.x, s - 1), y: clamp(0, this.y + mod.y, s - 1)}
             };
+            return ret;
         }
     });
     var emptyTile = (x, y) => tile(' ', 'light-green', x, y);
+    var wallTile = (x,y) => tile(' ', 'green',x,y);
     var alpha = [
         {char: 'x', col: 'red'},
         {char: 'o', col: 'blue'},
         {char: 'a', col: 'purple'}];
 
     var objs = '';
+
+    var generateLand= () => {
+        var tempMap = new Array(s).fill('').map(o=>({}));
+        for(var i = 0; i < s*wallFactor; i++){
+            var x = rand(s - 1);
+            var y = rand(s - 1);
+            tempMap[x][y] = true;
+        }
+
+        for(x in tempMap){
+            for(y in tempMap[x]) {
+                for(var i = 0; i < 5; i++){
+                    xmod = randNeg(rand(1));
+                    ymod = randNeg(rand(1));
+                    tempMap[+clamp(0, +x + xmod, s - 1)][+clamp(0, +y + ymod, s - 1)] = true;
+                }
+            }
+        }
+
+        for(x in tempMap){
+            for(y in tempMap[x]){
+                if(y){
+                    objs[x][y] = wallTile(x,y);
+                }
+            }
+        }
+    }
     var initEngine = ()=> {
+        $scope.ready = false;
         objs = new Array(s).fill('').map(o => ({}));
+        if(!noWalls) {
+            generateLand();
+        }
 
         for (var i = 0; i < maxCritterCount; i++) {
             var a = pickRandom(alpha);
@@ -131,6 +175,7 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
             var y = rand(s - 1);
             objs[x][y] = critter(a.char, a.col, x, y);
         }
+
         $scope.field = new Array(s).fill('').map(
             (o, x) => new Array(s).fill('').map(
                 (o, y) => {
@@ -138,6 +183,7 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
                 }
             )
         );
+        $scope.ready = true;
     }
 
 
@@ -177,9 +223,11 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
         $timeout(engineLoop, 1000 / FPS);
     }
 
+    $timeout(() => {
+        initEngine();
+        engineLoop();
+    }, 50);
 
-    initEngine();
-    engineLoop();
 
 
 })

@@ -10,14 +10,18 @@
 </head>
 
 <body ng-controller="testCtrl">
-	<table class="mainTable">
-		<tr ng-repeat="row in field">
-			<td ng-repeat="c in row track by $index">
-				<div class="cont" ng-class="c.col">{{c.char}}</div>
-			</td>
-
-		</tr>
-	</table>
+	<div ng-show="ready">
+		<table class="mainTable">
+			<tr ng-repeat="row in field">
+				<td ng-repeat="c in row track by $index">
+					<div class="cont" ng-class="c.col">{{c.char}}</div>
+				</td>
+			</tr>
+		</table>
+	</div>
+	<div class="loading" ng-hide="ready">
+		LOADING
+	</div>
 </body>
 <script src="js/lib.js"></script>
 <script src="js/main.js"></script>
