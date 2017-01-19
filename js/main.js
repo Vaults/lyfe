@@ -1,7 +1,7 @@
 angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
     var s = 50;
     var maxCritterCount = s;
-    var moveChance = 0.30;
+    var moveChance = 0.10;
     var seqChance = 0.00001;
     var FPS = 30;
     var noWalls = !true;
@@ -10,7 +10,8 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
     var tile = (c, cl, x, y) => ({
         char: c, col: cl, x: x, y: y,
     });
-    var critter = (c, cl, x, y)=> $.extend(tile(c, cl, x, y), {
+    var critter = (c, cl, x, y, rot)=> $.extend(tile(c, cl, x, y), {
+        rotation: rot,
         sequences: {
             currSequence: {
                 state: false,
@@ -88,9 +89,20 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
                     return {x: xfac, y: yfac};
                 }, maxPhase: 1
             },
-            moveStill:{'f':(p,par)=>({x:0,y:0}),maxPhase:1}
+            moveStill:{'f':(p,par)=>({x:0,y:0}),maxPhase:1},
+            moveZigzag:{'f':(p,par)=>{
+                var dirs=[
+                    {x:-1, y:0},
+                    {x:0, y:1},
+                    {x:1, y:0},
+                    {x:0, y:-1}
+                    ];
+                var winds = {'w':0,'n':1,'e':2,'s':3};
+                var d = winds[par];
+                if(p % 4 == 1 || p % 4 == 2){return dirs[d];}
+                else{return (p % 4 == 0)?dirs[trueMod(d-1, 4)]:dirs[(d+1)%4]}
+            }, maxPhase:8}
         },
-
         senseSurroundings: (x,y) => {
             var ret = [];
             for(var i = -1; i <= 1; i++){
@@ -106,17 +118,23 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
             var mod = {x: 0, y: 0};
             var surr = this.senseSurroundings(this.x, this.y);
 
+            if(!this.sequences.inSequence()) {
+                this.sequences.startSequence('moveRandom');
+            }
             if(surr.length > 0){
                 //oh no run away
-
-                this.sequences.startSequence('moveLine', {x:-(surr[0][0]), y:-(surr[0][1])});
+                if(rand(10) < 2) {
+                    this.sequences.startSequence('moveLine', {x: -(surr[0][0]), y: -(surr[0][1])});
+                }
             } else if(!this.sequences.inSequence()){
-                if(rand(10000) < 5){
+                var r = rand(10000);
+                if(r < 5){
                     this.sequences.startSequence('moveBlock');
-                }else {
-                    this.sequences.startSequence('moveRandom');
+                }else if(r < 10) {
+                    this.sequences.startSequence('moveZigzag', pickRandom(['n','w','s','e']));
                 }
             }
+
 
             mod = this.sequences.run();
 
@@ -130,7 +148,7 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
     });
     var emptyTile = (x, y) => tile(' ', 'lightgreen', x, y);
     var wallTile = (x,y) => tile(' ', 'green',x,y);
-    var alpha = ['x', 'a', 'o', 'c', 'e', 'u', 'z', 'n', 'w', 'v', '#', '@', '€', '^', '-', '+', '=', ''];
+    var alpha = ['x', 'a', 'o', 'c', 'e', 'u', 'z', 'n', 'w', 'v', '#', '@', '€', '^', '-', '+', '='];
 
     var objs = '';
 
@@ -171,7 +189,7 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
             var a = pickRandom(alpha);
             var x = rand(s - 1);
             var y = rand(s - 1);
-            objs[x][y] = critter(a, 'hsl('+rand(0,360)+', 60%, 30%)' , x, y);
+            objs[x][y] = critter(a, 'hsl('+rand(0,360)+', 60%, 30%)' , x, y, pickRandom([90,180,270]));
         }
 
         $scope.field = new Array(s).fill('').map(

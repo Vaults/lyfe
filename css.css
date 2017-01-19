@@ -16,6 +16,7 @@ table.mainTable tr{
     text-align: center;
     color: white !important;
     font-size: small;
+    transform: rotate(90deg);
 }
 .loading{
     text-align: center;
