@@ -1,5 +1,4 @@
 angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
-    console.log(CONF.maxCritterCount);
     var tile = (c, cl, x, y) => {
         var color = {};
         if(typeof cl == "string"){color.toString = () => cl;}
@@ -44,13 +43,18 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
             }
 
 
-            mod = this.sequences.run();
+            mod = this.sequences.run(this);
 
-
-            var ret = {
-                'from': this,
-                'to': {x: LIB.clamp(0, this.x + mod.x, CONF.s - 1), y: LIB.clamp(0, this.y + mod.y, CONF.s - 1)}
-            };
+            try {
+                var ret = {
+                    'from': this,
+                    'to': {x: LIB.clamp(0, this.x + mod.x, CONF.s - 1), y: LIB.clamp(0, this.y + mod.y, CONF.s - 1)}
+                };
+            }catch(e){
+                console.error('RUN BROKEN, EXCEPTION THROWN');
+                console.error('mod', mod);
+                throw e;
+            }
             return ret;
         }
     });
@@ -92,20 +96,24 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
         if(!CONF.noWalls) {
             generateLand();
         }
+        if(!CONF.DEBUG){
+            for (var i = 0; i < CONF.maxCritterCount; i++) {
 
-        for (var i = 0; i < CONF.maxCritterCount; i++) {
+                var x = LIB.rand(CONF.s - 1);
+                var y = LIB.rand(CONF.s - 1);
 
-            var x = LIB.rand(CONF.s - 1);
-            var y = LIB.rand(CONF.s - 1);
-
-            var ch = (a,b) => objs[LIB.clamp(0,a,CONF.s-1)][LIB.clamp(0,b,CONF.s-1)];
-            while(ch(x-1,y) || ch(x+1,y) || ch(x,y-1) || ch(x,y+1)){
-                x = LIB.rand(CONF.s - 1);
-                y = LIB.rand(CONF.s - 1);
+                var ch = (a,b) => objs[LIB.clamp(0,a,CONF.s-1)][LIB.clamp(0,b,CONF.s-1)];
+                while(ch(x-1,y) || ch(x+1,y) || ch(x,y-1) || ch(x,y+1)){
+                    x = LIB.rand(CONF.s - 1);
+                    y = LIB.rand(CONF.s - 1);
+                }
+                objs[x][y] = createCritter(x, y);
             }
-            objs[x][y] = createCritter(x, y);
+        }else{
+            var c = createCritter(0,0);
+            objs[0][0] = c;
+            c.sequences.startSequence('moveTo', {to:{x:CONF.s-1,y:CONF.s-1}, 'objs':objs});
         }
-
         $scope.field = new Array(CONF.s).fill('').map(
             (o, x) => new Array(CONF.s).fill('').map(
                 (o, y) => {

@@ -6,6 +6,7 @@ LIB.clamp = (a, x, b) => (x < a) ? a : ((x > b) ? b : x);
 LIB.eqCoords = (a, b) => a.x == b.x && a.y == b.y;
 LIB.trueMod = (n, m) => ((n % m) + m) % m;
 LIB.nsew = (o, b) => (b.x > o.x) ? 'e' : ((b.x < o.x) ? 'w' : ((b.y < o.y) ? 'n' : 's'));
+LIB.xor = (a,b) => ( a || b ) && !( a && b );
 /*LIB.isEqual =  (a, b) => {
     var check = (a, b) => {
         if (!(a && b)) {  return false; }
@@ -25,12 +26,16 @@ LIB.nsew = (o, b) => (b.x > o.x) ? 'e' : ((b.x < o.x) ? 'w' : ((b.y < o.y) ? 'n'
     };
     return check(b,a) && check(a,b);
 };*/
-LIB.getNeighbors = (e, o) =>{
+LIB.getNeighbors = (e, o, inv) =>{
     var ret = [];
     for(var i = -1; i <= 1; i++){
         for(var j = -1; j <= 1; j++){
-            if(o[e.x + i] && o[e.x+i][e.y+j] && Math.abs(i) != Math.abs(j)){
-                ret.push([i,j,o[e.x+i][e.y+j]]);
+            var xn = e.x + i;
+            var yn = e.y + j;
+            if(xn >= 0 && xn < CONF.s && yn >= 0 && yn < CONF.s){
+                if(o[xn] && LIB.xor(o[xn][yn], inv) && Math.abs(i) != Math.abs(j)){
+                    ret.push([xn, yn,o[xn][yn]]);
+                }
             }
         }
     }
@@ -40,10 +45,10 @@ LIB.coordinatesInArray = (c, a) => {
     for(i in a){
         p = a[i];
         if(p.x == c.x && p.y == c.y){
-            return p;
+            return i;
         }
     }
-    return false;
+    return -1;
 }
 
 
@@ -81,17 +86,17 @@ LIB.entitySequences = {
     isDone: function() {
         return this.currSequence.phase == this.currSequence.maxPhase;
     },
-    run: function() {
+    run: function(c) {
         try {
-            var ret = this.patterns[this.currSequence.sequence].f(this.currSequence.phase, this.currSequence.parameters);
+            var ret = this.patterns[this.currSequence.sequence].f(this.currSequence.phase,c, this.currSequence.parameters);
             this.incPhase();
             if (this.isDone()) {
                 this.endSequence();
             }
             return ret;
         }catch(e){
-            console.log('SEQUENCE BROKEN, EXCEPTION THROWN');
-            console.log('sequence',this.currSequence.sequence,'state', this.currSequence.state);
+            console.error('SEQUENCE BROKEN, EXCEPTION THROWN');
+            console.error('sequence',this.currSequence.sequence,'state', this.currSequence.state);
             throw e;
         }
     },
@@ -131,8 +136,8 @@ LIB.entitySequences = {
                 return {x: xfac, y: yfac};
             }, maxPhase: 1
         },
-        moveStill:{'f':(p,par)=>({x:0,y:0}),maxPhase:1},
-        moveZigzag:{'f':(p,par)=>{
+        moveStill:{'f':(p,c,par)=>({x:0,y:0}),maxPhase:1},
+        moveZigzag:{'f':(p,c,par)=>{
             var dirs=[
                 {x:-1, y:0},
                 {x:0, y:1},
@@ -144,38 +149,53 @@ LIB.entitySequences = {
             if(p % 4 == 1 || p % 4 == 2){return dirs[d];}
             else{return (p % 4 == 0)?dirs[LIB.trueMod(d-1, 4)]:dirs[(d+1)%4]}
         }, maxPhase:8},
-        moveTo: {'f':(p,par)=>{
+        moveTo: {'f':(p,c,par)=>{
             // A* woo
             var open = [];
             var closed = [];
-            par.from.g = 0;
+            par.from = {x: c.x, y: c.y,f:0, g:0, h:0};
             open.push(par.from);
             var f = (to) => to.g + h(to);
-            var h = (to) => (Math.abs(par.from.x - to.x) + Math.abs(par.from.y - to.y));
+            var h = (from) => (Math.abs(from.x - par.to.x) + Math.abs(from.y - par.to.y));
+
+
             while(open.length > 0){
                 //pop item with smallest f off the queue
-                var tq = open.map(f);
-                var q = open.splice(tq.indexOf(Math.min.apply(Math, tq)),1)[0];
-
-                if(LIB.coordinatesInArray(q, [par.to])){
-                    //return last item in path
+                var q = open[0];
+                for(o in open){
+                    if(open[o].f < q.f){q = open[o];}
                 }
+
+                if(LIB.coordinatesInArray(q, [par.to]) >= 0) {
+                    var list = [];
+                    while (q.p) {
+                        list.push(q);
+                        q = q.p;
+                    }
+                    var last = list[list.length - 1];
+                    return {x: last.x - par.from.x, y: last.y - par.from.y};
+                }
+                open.splice(LIB.coordinatesInArray(q, open),1);
                 closed.push(q);
                 //generate q's successors
-                var successors = LIB.getNeighbors(q, par.objs);
-
+                var successors = LIB.getNeighbors(q, par.objs, true);
                 //loop over successors
                 successors.forEach((succ)=>{ //SUCC
-                    if(succ.x == par.to.x && succ.to.y == par.to.y){} //done succ
-
-                    if(!LIB.coordinatesInArray(succ, closed)){
-                        var i = LIB.coordinatesInArray(succ, open);
-                        if(!LIB.coordinatesInArray(succ, open)){
-                            succ.g = Infinity;
+                    succ = {x: succ[0], y: succ[1], f:0, g:0, h:0};
+                    var best = function(){
+                        succ.p = q;
+                        succ.g = q.g + 1;
+                        succ.f = f(succ);
+                    }
+                    if(LIB.coordinatesInArray(succ, closed) < 0){
+                        if(LIB.coordinatesInArray(succ, open) < 0){
+                            best();
+                            succ.h = h(succ);
                             open.push(succ);
-                        }else if (q.g < succ.g) {
+                        }else if (q.g + 1 < succ.g) {
                             succ.p = q;
-                            succ.g = q.g + 1;
+                            q.c = succ;
+                            best();
                         }
                     }
 
@@ -183,7 +203,9 @@ LIB.entitySequences = {
                 })
 
             }
-        }, maxPhase: 900}
+            console.log('nopath');
+            return {x:0, y: 0};
+        }}
     }
 
 };
