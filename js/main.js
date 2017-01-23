@@ -2,7 +2,7 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
     var tile = (c, cl, x, y) => {
         var color = {};
         if(typeof cl == "string"){color.toString = () => cl;}
-        else{ color = {hue: cl, sat: 60, br: 20, toString : function(){return 'hsl('+this.hue+','+this.sat+'%,'+this.br+'%);'}}}
+        else{ color = {hue: cl, sat: 80, br: 30, toString : function(){return 'hsl('+this.hue+','+this.sat+'%,'+this.br+'%);'}}}
         return {char: c, col: color, x:x, y:y};
     };
     var createCritter = function(x, y){
@@ -13,39 +13,44 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
         rotation: rot,
         sequences: LIB.entitySequences,
         senseSurroundings: function() {
-             return LIB.getNeighbors(this, objs).filter(o=>o[2].move);
+             return LIB.getNeighbors(this, objs).filter(o=>o.move);
         },
         isThreat: function(c) {
-            return Math.abs(this.col.hue - c.col.hue) + LIB.rand(30) > 130;
+            return Math.abs(this.col.hue - c.col.hue) + LIB.rand(30) > 150;
         },
-        move: function () {
+        move: function (grid) {
             var mod = {x: 0, y: 0};
             var surr = this.senseSurroundings(this.x, this.y);
 
             if(surr.length > 0){
                 //oh no run away
-                if(this.isThreat(surr[0][2])) {
+                if(this.isThreat(surr[0])) {
                     if(LIB.rand(10) > 5) {
-                        this.sequences.startSequence('moveLine', {x: -(surr[0][0]), y: -(surr[0][1])});
+                        var negNormal = (o) => (o>0)?1:-1;
+                        this.sequences.startSequence('moveLine', {x: negNormal(surr[0].x), y: negNormal(surr[0].x)});
                     }else{
-                        this.sequences.startSequence('moveZigzag', LIB.nsew(this, {x: surr[0][0], y: surr[0][1]}));
+                        this.sequences.startSequence('moveZigzag', LIB.nsew(this, {x: surr[0].x, y: surr[0].y}));
                     }
                 }
             }
             if(!this.sequences.inSequence()){
-                this.sequences.startSequence('moveRandom');
-                var r = LIB.rand(1/CONF.seqChance);
-                if(r < 2){
+                this.sequences.startSequence('moveRandom'); var r = LIB.rand(1/CONF.seqChance);
+                if(r < 1){
                     this.sequences.startSequence('moveBlock', LIB.rand(10) > 5);
-                }else if(r < 4) {
+                }else if(r < 2) {
                     this.sequences.startSequence('moveZigzag', LIB.pickRandom(['n','w','s','e']));
+                }else if(r < 10) {
+                    var par = {grid: $.extend(true, {}, grid), from: this, to:{x:LIB.rand(0,CONF.s-1),y:LIB.rand(0,CONF.s-1)}, 'objs':objs};
+                    this.sequences.startSequence('moveTo', par);
                 }
             }
 
 
             mod = this.sequences.run(this);
 
+
             try {
+                if(Math.abs(mod.x) > 1 || Math.abs(mod.y) > 1){throw "Critter teleported!"}
                 var ret = {
                     'from': this,
                     'to': {x: LIB.clamp(0, this.x + mod.x, CONF.s - 1), y: LIB.clamp(0, this.y + mod.y, CONF.s - 1)}
@@ -63,8 +68,10 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
     var alpha = ['x', 'a', 'o', 'c', 'e', 'u', 'z', 'n', 'w', 'v', '#', '@', '€', '^', '-', '+', '='];
 
     var objs = '';
+    var grid;
 
     var generateLand= () => {
+        
         var tempMap = new Array(CONF.s).fill('').map(o=>({}));
         for(var i = 0; i < CONF.s*CONF.wallFactor; i++){
             var x = LIB.rand(CONF.s - 1);
@@ -110,9 +117,16 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
                 objs[x][y] = createCritter(x, y);
             }
         }else{
-            var c = createCritter(0,0);
-            objs[0][0] = c;
-            c.sequences.startSequence('moveTo', {to:{x:CONF.s-1,y:CONF.s-1}, 'objs':objs});
+            var x = LIB.rand(0,CONF.s-1);
+            var y = LIB.rand(0,CONF.s-1);
+            var c = createCritter(x,y);
+            objs[x][y] = c;
+            var grid = new Array(CONF.s).fill('').map((o,x) =>
+                new Array(CONF.s).fill('').map((o,y) =>
+                    (objs[x][y])?null:{x: x, y: y, f:0, g:0, h:0, visited: false}
+                )
+            );
+            c.sequences.startSequence('moveTo', {from: c, to:{x:LIB.rand(0,CONF.s-1),y:LIB.rand(0,CONF.s-1)}, 'objs':objs, grid: grid});
         }
         $scope.field = new Array(CONF.s).fill('').map(
             (o, x) => new Array(CONF.s).fill('').map(
@@ -131,12 +145,17 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
 
     var doMoves = () => {
         var moves = [];
+        var grid = new Array(CONF.s).fill('').map((o,x) =>
+            new Array(CONF.s).fill('').map((o,y) =>
+                (objs[x][y])?null:{x: x, y: y, f:0, g:0, h:0, visited: false}
+            )
+        );
         objs.forEach(y => {
             for (key in y) {
                 o = y[key];
                 if (o) {
                     if (o.move) {
-                        moves.push(o.move());
+                        moves.push(o.move(grid));
                     }
                 }
             }
@@ -151,6 +170,8 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
                 $scope.field[o.from.x][o.from.y] = emptyTile(o.from.x, o.from.y);
                 o.from.x = o.to.x;
                 o.from.y = o.to.y;
+            }else{
+                o.from.sequences.endSequence();
             }
         });
     }
