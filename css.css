@@ -6,9 +6,7 @@ table.mainTable{
     user-drag: none;
 }
 .root{
-    display:flex;
-    margin-left: auto;
-    margin-right: auto;
+    display: inline-flex;
 }
 .sidebar{
     width: 10vw;
@@ -17,26 +15,64 @@ table.mainTable{
     border: 2px dashed darkgreen;
     background-color: #80e080;
     margin: 75px;
+    height: 100%;
 }
 .sidebar .small{
     font-size: xx-small;
     color: white;
+}
+.sidebar table{
+    width: 100%;
+    text-align: center;
+    font-size: small;
+    border-spacing: 0px;
+    border-collapse: collapse;
+}
+.sidebar td{
+    border: 1px darkgreen solid;
+
+}
+.round{
+    box-shadow: 2px 2px 7px -2px rgba(0,0,0,0.75);
+}
+.shadow{
+    border-radius: 5px;
 }
 table.mainTable tr{
     font-family: sans-serif;
     margin: 0px;
 }
 .cont{
-    width: 15px;
-    height: 15px;
+    width: 13px;
+    height: 13px;
     border: 1px solid #80e080;
     margin: -1px;
     text-align: center;
     color: white !important;
     font-size: small;
 }
+.cont-lg{
+    width: 50px;
+    height: 50px;
+    font-size: xx-large;
+    margin-left: auto;
+    margin-right: auto;
+}
 .loading{
     text-align: center;
-    font-family: sans-serif;
-    font-size: 8em;
+    display: block;
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%) translateX(-50%);
+    left: 50%;
+    font-family: "Comic Sans MS";
+    font-size: small;
+    z-index: 100;
+}
+.loading-bg {
+    background-color: rgba(251,240,228,0.6);
+
+}
+.loading-bg-opaque{
+    background: rgba(251,240,228,1);
 }

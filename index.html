@@ -1,65 +1,102 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
 <html lang="en" ng-app="life">
 <head>
-  <meta charset="utf-8">
-  <title>lyfe</title>
-  <script src="js/lib/jquery-1.12.0.min.js"></script>
-  <script src="js/lib/angular.min.js"></script>
-  <link rel="stylesheet" href="css.css" type="text/css">
+    <meta charset="utf-8">
+    <title>lyfe</title>
+    <script src="js/lib/jquery-1.12.0.min.js"></script>
+    <script src="js/lib/angular.min.js"></script>
+    <link rel="stylesheet" href="css.css" type="text/css">
 </head>
 
-<body ng-controller="testCtrl">
-	<div ng-show="ready" style="display: flex">
-		<div class="root">
-			<div class="sidebar">
-				Keys; w:wall, f: food, c: clear
-			</div>
-			<div>
-				<table class="mainTable">
-					<tr ng-repeat="row in field">
-						<td ng-repeat="c in row track by $index">
-							<a ng-click="click(c)" ng-mouseover="mouseover(c)">
-								<div class="cont" style="background-color: {{c.col.toString()}};">
-									<div style="transform: rotate({{c.rotation}}deg);">
-										{{c.char}}
-									</div>
-								</div>
-							</a>
-						</td>
-					</tr>
-				</table>
-			</div>
-			<div class="sidebar">
-				<table>
-				<tr><td>
-					Brush:
-					</td>
-					<td>
-						<div class="cont" style="border: 1px black solid; background-color: {{paintTool.brush(0,0).col.toString()}}">&nbsp</div>
-						<div class="small">rem: {{paintTool.rem}}</div>
-					</td>
-				</tr>
-					<tr><td>
-						Tile:
-					</td>
-						<td>
-							<div class="cont" style="border: 1px black solid; background-color: {{currentTile.col.toString()}}">
-								<div style="transform: rotate({{currentTile.rotation}}deg);">
-									{{currentTile.char}}
-								</div>
-							</div>
-							<div class="small">{{"{"+currentTile.x+","+currentTile.y+"}"}}</div>
-						</td>
-					</tr>
+<body ng-controller="testCtrl" ng-class="(ready)?'':'loading-bg'">
+<div class="loading-bg" ng-hide="ready">
+    <div class="loading loading-bg-opaque">
+        loading <br>
+        <img src="img/pusheen.gif"/>
+    </div>
+    <div style="height: 100vh; width: 100vw; position: fixed;" class="loading-bg"></div>
+</div>
+<div style="width: 100%; text-align: center">
+    <div class="root">
+        <div class="sidebar round">
+            <table>
+                <tr>
+                    <th>Key</th>
+                    <th>Function</th>
+                </tr>
+                <tr>
+                    <td>W</td>
+                    <td>Brush: Wall</td>
+                </tr>
+                <tr>
+                    <td>F</td>
+                    <td>Brush: Food</td>
+                </tr>
+                <tr>
+                    <td>C</td>
+                    <td>Clear</td>
+                </tr>
+                <tr>
+                    <td>N</td>
+                    <td>Generate Land</td>
+                </tr>
 
-				</table>
-			</div>
-		</div>
-	</div>
-	<div class="loading" ng-hide="ready">
-		LOADING
-	</div>
+            </table>
+        </div>
+        <div>
+            <table class="mainTable shadow">
+                <tr ng-repeat="row in field">
+                    <td ng-repeat="c in row track by $index">
+                        <a ng-click="click(c)" ng-mouseover="mouseover(c)">
+                            <div class="cont" style="background-color: {{c.col.toString()}};">
+                                <div style="transform: rotate({{c.rotation}}deg);">
+                                    {{c.char}}
+                                </div>
+                            </div>
+                        </a>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div class="sidebar round">
+            <table>
+                <tr>
+                    <th>var</th>
+                    <th>val</th>
+                </tr>
+                <tr>
+                    <td>
+                        Brush:
+                    </td>
+                    <td>
+                        <div class="cont cont-lg"
+                             style="border: 1px black solid; background-color: {{paintTool.brush(0,0).col.toString()}}">
+                            &nbsp
+                        </div>
+                        <div class="small">&nbsp{{paintTool.rem}}</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        Tile:
+                    </td>
+                    <td>
+                        <div class="cont cont-lg"
+                             style="border: 1px black solid; background-color: {{currentTile.col.toString()}}">
+                            <div style="transform: rotate({{currentTile.rotation}}deg);">
+                                {{currentTile.char}}
+                            </div>
+                        </div>
+                        <div class="small">{{"{"+currentTile.x+","+currentTile.y+"}"}}</div>
+                    </td>
+                </tr>
+
+            </table>
+        </div>
+    </div>
+</div>
 </body>
 
 <script src="js/conf.js"></script>
