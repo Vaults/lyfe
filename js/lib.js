@@ -1,7 +1,8 @@
 var LIB = {};
 LIB.pickRandom = (a) => a[~~(Math.random() * a.length)];
 LIB.randNeg = (i) => (LIB.rand(1) == 1) ? i : -i;
-LIB.rand = (a, b) => (b) ? (a + Math.round(Math.random() * b)) : Math.round(Math.random() * (a));
+LIB.rand = (a, b) => (b) ? (a + Math.round(Math.random() * (b-a))) : Math.round(Math.random() * (a));
+LIB.flipCoin = () => LIB.rand(10) < 5;
 LIB.clamp = (a, x, b) => (x < a) ? a : ((x > b) ? b : x);
 LIB.eqCoords = (a, b) => a.x == b.x && a.y == b.y;
 LIB.trueMod = (n, m) => ((n % m) + m) % m;
@@ -80,14 +81,16 @@ LIB.yatesShuffle = a => {
     }
     return t;
 }
-LIB.getNeighbors = (e, o, inv) =>{
+LIB.getNeighbors = (e, o, n) =>{
     var ret = [];
-    for(var i = -1; i <= 1; i++){
-        for(var j = -1; j <= 1; j++){
+    if(!n){n=1;}
+
+    for(var i = -1*n; i <= 1*n; i++){
+        for(var j = -1*n; j <= 1*n; j++){
             var xn = e.x + i;
             var yn = e.y + j;
             if(xn >= 0 && xn < CONF.s && yn >= 0 && yn < CONF.s){
-                if(o[xn] && LIB.xor(o[xn][yn], inv) && Math.abs(i) != Math.abs(j)){
+                if(o[xn] && o[xn][yn] && (Math.abs(i) != Math.abs(j) || n > 1)){
                     ret.push(o[xn][yn]);
                 }
             }
@@ -134,7 +137,7 @@ LIB.entitySequences = {
             };
         }else{
             var path = this.patterns[f].f(0, par);
-            if(path && path.length > 0) {
+            if(path) {
                 this.currSequence = {
                     state: true,
                     sequence: f,
@@ -142,10 +145,7 @@ LIB.entitySequences = {
                     maxPhase: path.length-1,
                     path: path
                 };
-            }else{
-                this.startSequence('moveRandom');
             }
-
         }
     },
     endSequence: function() {
@@ -162,25 +162,30 @@ LIB.entitySequences = {
     isDone: function() {
         return this.currSequence.phase >= this.currSequence.maxPhase;
     },
+    sequenceName: function(){return this.currSequence.sequence;},
     run: function(c) {
         try {
-            var ret;
-            if(!this.currSequence.path) {
-                ret = this.patterns[this.currSequence.sequence].f(this.currSequence.phase, this.currSequence.parameters);
-            }else if(!this.isDone()){
-                var node = this.currSequence.path[this.currSequence.phase];
-                ret = {x: node.x - c.x, y: node.y - c.y};
+            if(!this.inSequence()){
+                this.startSequence('moveRandom');
+                return this.run(c);
+            }else{
+                var ret;
+                if(!this.currSequence.path) {
+                    ret = this.patterns[this.currSequence.sequence].f(this.currSequence.phase, this.currSequence.parameters);
+                } else {
+                    var node = this.currSequence.path[this.currSequence.phase];
+                    ret = {x: node.x - c.x, y: node.y - c.y};
+                }
+
+                this.incPhase();
+                if (this.isDone()) {
+                    this.endSequence();
+                }
+
+                if(Math.abs(ret.x) > 1 || Math.abs(ret.y) > 1){throw "Critter teleported!"}
+                return ret;
             }
 
-            this.incPhase();
-            if (this.isDone()) {
-                this.endSequence();
-            }
-
-
-
-            if(Math.abs(ret.x) > 1 || Math.abs(ret.y) > 1){throw "Critter teleported!"}
-            return ret;
         }catch(e){
             console.error('SEQUENCE BROKEN, EXCEPTION THROWN');
             console.error('sequence',this.currSequence.sequence,'state', this.currSequence.state, 'this', c, 'modifier', ret, 'parameters', this.currSequence.parameters);
@@ -244,10 +249,11 @@ LIB.entitySequences = {
             
             
             var from = {x: par.from.x, y: par.from.y,f:0, g:0, h:0};
+            var to = par.to;
             open.push(from);
 
             var f = (to) => to.g + to.h;
-            var h = (from) => LIB.octileDistance(from, par.to);
+            var h = (from) => LIB.octileDistance(from, to);
 
 
 
@@ -256,14 +262,14 @@ LIB.entitySequences = {
                 var q = open.pop();
 
                 //Return path if q = dest
-                if(LIB.coordinatesInArray(q, [par.to]) >= 0) {
+                if(LIB.coordinatesInArray(q, [to]) >= 0) {
                     var list = [];
                     while (q.p) {
                         list.push(q);
                         q = q.p;
                     }
                     list = list.reverse();
-                    return list;
+                    return (list.length > 0)?list:false;
                 }
 
                 //add q to closed

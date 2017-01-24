@@ -3,26 +3,65 @@
 <html lang="en" ng-app="life">
 <head>
   <meta charset="utf-8">
-  <title>TESTERUUU</title>
+  <title>lyfe</title>
   <script src="js/lib/jquery-1.12.0.min.js"></script>
   <script src="js/lib/angular.min.js"></script>
   <link rel="stylesheet" href="css.css" type="text/css">
 </head>
 
 <body ng-controller="testCtrl">
-	<div ng-show="ready">
-		<table class="mainTable">
-			<tr ng-repeat="row in field">
-				<td ng-repeat="c in row track by $index">
-					<div class="cont" style="background-color: {{c.col.toString()}};"><div style="transform: rotate({{c.rotation}}deg)">{{c.char}}</div></div>
-				</td>
-			</tr>
-		</table>
+	<div ng-show="ready" style="display: flex">
+		<div class="root">
+			<div class="sidebar">
+				Keys; w:wall, f: food, c: clear
+			</div>
+			<div>
+				<table class="mainTable">
+					<tr ng-repeat="row in field">
+						<td ng-repeat="c in row track by $index">
+							<a ng-click="click(c)" ng-mouseover="mouseover(c)">
+								<div class="cont" style="background-color: {{c.col.toString()}};">
+									<div style="transform: rotate({{c.rotation}}deg);">
+										{{c.char}}
+									</div>
+								</div>
+							</a>
+						</td>
+					</tr>
+				</table>
+			</div>
+			<div class="sidebar">
+				<table>
+				<tr><td>
+					Brush:
+					</td>
+					<td>
+						<div class="cont" style="border: 1px black solid; background-color: {{paintTool.brush(0,0).col.toString()}}">&nbsp</div>
+						<div class="small">rem: {{paintTool.rem}}</div>
+					</td>
+				</tr>
+					<tr><td>
+						Tile:
+					</td>
+						<td>
+							<div class="cont" style="border: 1px black solid; background-color: {{currentTile.col.toString()}}">
+								<div style="transform: rotate({{currentTile.rotation}}deg);">
+									{{currentTile.char}}
+								</div>
+							</div>
+							<div class="small">{{"{"+currentTile.x+","+currentTile.y+"}"}}</div>
+						</td>
+					</tr>
+
+				</table>
+			</div>
+		</div>
 	</div>
 	<div class="loading" ng-hide="ready">
 		LOADING
 	</div>
 </body>
+
 <script src="js/conf.js"></script>
 <script src="js/lib.js"></script>
 <script src="js/main.js"></script>

@@ -1,8 +1,26 @@
 table.mainTable{
     border: 2px solid black;
     border-spacing: inherit;
+    float: left;
+    user-select: none;
+    user-drag: none;
+}
+.root{
+    display:flex;
     margin-left: auto;
     margin-right: auto;
+}
+.sidebar{
+    width: 10vw;
+    font-family: sans-serif;
+    font-size: x-large;
+    border: 2px dashed darkgreen;
+    background-color: #80e080;
+    margin: 75px;
+}
+.sidebar .small{
+    font-size: xx-small;
+    color: white;
 }
 table.mainTable tr{
     font-family: sans-serif;
@@ -16,7 +34,6 @@ table.mainTable tr{
     text-align: center;
     color: white !important;
     font-size: small;
-    transform: rotate(90deg);
 }
 .loading{
     text-align: center;
