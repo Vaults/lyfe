@@ -2,7 +2,8 @@
  * Created by Marcel on 21-1-2017.
  */
 var CONF = {
-    s: ~~($(window).height() / 14.5),
+    s: ~~($(window).height() / 15),
+    rowCalcTime: 75,
     maxCritterCount: 50,
     moveChance: 0.10,
     FPS: 60,

@@ -1,9 +1,14 @@
+body{
+    -moz-user-select: none;
+    -khtml-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
 table.mainTable{
     border: 2px solid black;
     border-spacing: inherit;
     float: left;
-    user-select: none;
-    user-drag: none;
 }
 .root{
     display: inline-flex;
@@ -43,8 +48,8 @@ table.mainTable tr{
     margin: 0px;
 }
 .cont{
-    width: 13px;
-    height: 13px;
+    width: 15px;
+    height: 15px;
     border: 1px solid #80e080;
     margin: -1px;
     text-align: center;

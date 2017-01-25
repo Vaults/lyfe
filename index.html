@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="css.css" type="text/css">
 </head>
 
-<body ng-controller="testCtrl" ng-class="(ready)?'':'loading-bg'">
+<body ng-controller="testCtrl" ng-class="(ready)?'':'loading-bg'" draggable="false">
 <div class="loading-bg" ng-hide="ready">
     <div class="loading loading-bg-opaque">
         loading <br>
@@ -26,27 +26,14 @@
                     <th>Key</th>
                     <th>Function</th>
                 </tr>
-                <tr>
-                    <td>W</td>
-                    <td>Brush: Wall</td>
+                <tr ng-repeat="h in help">
+                    <td>{{h.key}}</td>
+                    <td>{{h.f}}</td>
                 </tr>
-                <tr>
-                    <td>F</td>
-                    <td>Brush: Food</td>
-                </tr>
-                <tr>
-                    <td>C</td>
-                    <td>Clear</td>
-                </tr>
-                <tr>
-                    <td>N</td>
-                    <td>Generate Land</td>
-                </tr>
-
             </table>
         </div>
         <div>
-            <table class="mainTable shadow">
+            <table class="mainTable shadow" draggable="false">
                 <tr ng-repeat="row in field">
                     <td ng-repeat="c in row track by $index">
                         <a ng-click="click(c)" ng-mouseover="mouseover(c)">

@@ -1,11 +1,15 @@
 var KEYS_DOWN = {};
 $(document).keydown(function (e) {
+    if(e.which == 32) {
+        e.preventDefault();
+    }
     KEYS_DOWN[e.which] = true;
 });
 $(document).keyup(function (e) {
     KEYS_DOWN[e.which] = false;
 });
 $(document).mousedown(function (e) {
+    console.log('wat');
     KEYS_DOWN['mouse'] = true;
 });
 $(document).mouseup(function (e) {
@@ -128,6 +132,14 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
     //['x', 'a', 'o', 'c', 'e', 'u', 'z', 'n', 'w', 'v', '#', '@', '€', '^', '-', '+', '='];
 
     $scope.objs = '';
+    $scope.help = [
+        {'key':'W', 'f':'Brush: Wall'},
+        {'key':'F', 'f':'Brush: Food'},
+        {'key':'C', 'f':'Clear'},
+        {'key':'N', 'f':'Generate Land'},
+        {'key':'SPACE', 'f':'Draw'},
+    ]
+    tileQueue = [];
     var clearMap = ()=> {
         $scope.objs.forEach((o, x) => {
             if (o) {
@@ -199,21 +211,27 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
                 for (var y = 0; y < $scope.field.length; y++) {
                     $scope.field[x][y] = ($scope.objs[x][y]) ? $scope.objs[x][y] : emptyTile(x, y);
                 }
-            }, i * 80);
+            }, i * CONF.rowCalcTime);
         }
 
         var order = new Array(CONF.s).fill('').map((o, i)=>i);
         var l = order.length;
         var ordBeg = order.slice(0, ~~(l / 2)).reverse();
         var ordEnd = order.slice(~~(l / 2));
-        order = $.map(ordBeg, function (v, i) {
-            return [v, ordEnd[i]];
-        });
-        order.forEach(doTimeout);
-
+        var ch = [];
+        for(var i = 0; i < Math.max(ordBeg.length, ordEnd.length); i++){
+            console.log(ordBeg.length, ordEnd.length);
+            if(ordBeg[i] !== undefined){doTimeout(ordBeg[i], i); ch.push(ordBeg[i]);}
+            if(ordEnd[i] !== undefined){doTimeout(ordEnd[i], i+0.5); ch.push(ordEnd[i]);}
+        }
+        if(JSON.stringify(ch.sort((a,b)=>a-b)) != JSON.stringify(order)){
+            console.error(order, ordBeg, ordEnd, ch);
+            throw "SOMETHAN AINT RITE"
+        }
 
     }
     var render = () => {
+
         $scope.field.forEach((xo, x)=>xo.forEach((yo, y)=> {
             if ($scope.objs[x][y]) {
                 if (yo !== $scope.objs[x][y]) {
@@ -269,9 +287,16 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
         }
 
     }
-
+    var addPaintedTiles=()=>{
+        tileQueue.forEach(o => {
+            console.log(o);
+            $scope.objs[o.x][o.y] = o.t;
+        });
+        tileQueue = [];
+    }
 
     var engineLoop = () => {
+        addPaintedTiles();
         handleKeys();
         doMoves();
         render();
@@ -283,20 +308,23 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
     $timeout(() => {
         $scope.ready = true;
         engineLoop();
-    }, 100 * CONF.s);
+    }, CONF.rowCalcTime * CONF.s);
 
 
     $scope.paintTool = {
         rem: null,
         setPaintRem: function (r) {
-            if (this.rem == null) {
+            if (!this.isSetPaintRem()) {
                 this.rem = r;
             }
         },
         clearPaintRem: function (r) {
-            if (this.rem != null) {
+            if (this.isSetPaintRem()) {
                 this.rem = null;
             }
+        },
+        isSetPaintRem: function (){
+            return this.rem != null;
         },
         currBrush: wallTile,
         setBrush: function (f) {
@@ -304,31 +332,26 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
         },
         brush: function (x, y) {
             return this.currBrush(x, y)
+        },
+        paint: function(o){
+            var ob = $scope.objs[o.x][o.y];
+            if (this.rem && ob && ob.paintable) {
+                  tileQueue.push({x:o.x, y:o.y, t: null});
+            } else if (!this.rem && !ob) {
+                tileQueue.push({x:o.x, y:o.y, t: this.brush(o.x,o.y)});
+            }
         }
     };
     $scope.click = function (o) {
-        var ob = $scope.objs[o.x][o.y];
-        if (ob) {
-            if (!ob.move) {
-                $scope.objs[o.x][o.y] = null;
-            }
-        } else {
-            $scope.objs[o.x][o.y] = $scope.paintTool.brush(o.x, o.y);
-        }
+        $scope.paintTool.paint(o);
     }
-    $scope.paint = function (o) {
-        var ob = $scope.objs[o.x][o.y];
-        if ($scope.paintTool.rem && ob && ob.paintable) {
-            $scope.objs[o.x][o.y] = null;
-        } else if (!$scope.paintTool.rem && !ob) {
-            $scope.objs[o.x][o.y] = $scope.paintTool.brush(o.x, o.y);
-        }
-    }
+
     $scope.mouseover = function (o) {
-        if (KEYS_DOWN['mouse']) {
+        //I'd do this with clicks, unfortunately rendering large tables and mousedrags don't go together so well :(
+        if (KEYS_DOWN[32]) {
             $scope.paintTool.setPaintRem(!!o.paintable);
-            $scope.paint(o);
-        } else {
+            $scope.paintTool.paint(o);
+        } else if($scope.paintTool.isSetPaintRem()) {
             $scope.paintTool.clearPaintRem();
         }
         $scope.currentTile = o;
