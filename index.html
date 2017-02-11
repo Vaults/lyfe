@@ -37,7 +37,7 @@
                 <tr ng-repeat="row in field">
                     <td ng-repeat="c in row track by $index">
                         <a ng-click="click(c)" ng-mouseover="mouseover(c)">
-                            <div class="cont" style="background-color: {{c.col.toString()}};">
+                            <div class="cont" style="background-color: {{c.col.toString()}}; {{c.contStyle}} ">
                                 <div class="statusbar" ng-show="c.status" style="opacity: {{1-(c.status()/100)}}">
                                     <div class="fill" style="width: {{c.status()}}%"></div>
                                 </div>

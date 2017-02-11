@@ -4,7 +4,7 @@ LIB.pickRandom = (a) => a[~~(Math.random() * a.length)];
 LIB.randNeg = (i) => (LIB.rand(1) == 1) ? i : -i;
 LIB.rand = (a, b) => (b) ? (a + Math.round(Math.random() * (b - a))) : Math.round(Math.random() * (a));
 LIB.flipCoin = () => LIB.rand(10) < 5;
-LIB.randOutOf = (a,b) => LIB.rand(b) > a;
+LIB.randOutOf = (a,b) => LIB.rand(b) <= a;
 LIB.clamp = (a, x, b) => (x < a) ? a : ((x > b) ? b : x);
 LIB.eqCoords = (a, b) => a.x == b.x && a.y == b.y;
 LIB.trueMod = (n, m) => ((n % m) + m) % m;
@@ -107,7 +107,7 @@ LIB.getNeighbors = (e, o, n) => {
         for (var j = -1 * n; j <= 1 * n; j++) {
             var xn = e.x + i;
             var yn = e.y + j;
-            if (xn >= 0 && xn < CONF.s && yn >= 0 && yn < CONF.s) {
+            if (xn >= 0 && xn < CONF.x && yn >= 0 && yn < CONF.y) {
                 if (o[xn] && o[xn][yn] && (Math.abs(i) != Math.abs(j) || n > 1)) {
                     ret.push(o[xn][yn]);
                 }
@@ -190,6 +190,7 @@ LIB.sequenceWrapper = function() {
             return this.currSequence.sequence;
         },
         run: function (c) {
+            var ret;
             try {
                 if (!this.inSequence()) {
                     this.startSequence('default');
@@ -250,7 +251,7 @@ LIB.entitySequences = $.extend(LIB.sequenceWrapper(), {
             var node = this.currSequence.path[this.currSequence.phase];
             ret = {x: node.x - c.x, y: node.y - c.y};
         }
-        if (Math.abs(ret.x) > 1 || Math.abs(ret.y) > 1) {
+        if (Math.abs(ret.x) + Math.abs(ret.y) > 1) {
             throw "Critter teleported!"
         }
         return ret;
@@ -293,7 +294,9 @@ LIB.entitySequences = $.extend(LIB.sequenceWrapper(), {
                 return {x: xfac, y: yfac};
             }, maxPhase: 1
         },
-        moveStill: {'f': (p, par)=>({x: 0, y: 0}), maxPhase: 1},
+        moveStill: {'f': (p, par)=> {
+           return {x: 0, y: 0};
+        }, maxPhase: 75},
         moveZigzag: {
             'f': (p, par)=> {
                 var dirs = [
