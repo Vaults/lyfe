@@ -41,7 +41,7 @@
                                 <div class="statusbar" ng-show="c.status" style="opacity: {{1-(c.status()/100)}}">
                                     <div class="fill" style="width: {{c.status()}}%"></div>
                                 </div>
-                                <div style="opacity: {{c.opacity}}; transform: rotate({{c.rotation}}deg);">
+                                <div style="{{c.style}}">
                                     {{c.char}}
                                 </div>
                             </div>
@@ -75,7 +75,10 @@
                     <td>
                         <div class="cont cont-lg"
                              style="border: 1px black solid; background-color: {{currentTile.col.toString()}}">
-                            <div style="transform: rotate({{currentTile.rotation}}deg);">
+                            <div class="statusbar" ng-show="currentTile.status">
+                                <div class="fill" style="width: {{currentTile.status()}}%"></div>
+                            </div>
+                            <div style="{{currentTile.style}}">
                                 {{currentTile.char}}
                             </div>
                         </div>

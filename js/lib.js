@@ -135,91 +135,125 @@ LIB.manhattanDistance = (a, b) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
 LIB.euclideanDistance = (a, b) => Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
 
 
-
-
-LIB.entitySequences = {
-    currSequence: {
-        state: false,
-        sequence: '',
-        phase: 0,
-        maxPhase: -1
-    },
-    inSequence: function () {
-        return this.currSequence.state;
-    },
-    startSequence: function (f, par) {
-        var p = this.patterns[f].maxPhase;
-        if (p) {
-            this.currSequence = {
-                state: true,
-                sequence: f,
-                phase: 0,
-                maxPhase: p,
-                parameters: par
-            };
-        } else {
-            var path = this.patterns[f].f(0, par);
-            if (path) {
-                this.currSequence = {
-                    state: true,
-                    sequence: f,
-                    phase: 0,
-                    maxPhase: path.length - 1,
-                    path: path
-                };
-            }
-        }
-    },
-    endSequence: function () {
-        this.currSequence = {
+LIB.sequenceWrapper = function() {
+    return {
+        currSequence: {
             state: false,
             sequence: '',
             phase: 0,
             maxPhase: -1
-        }
-    },
-    incPhase: function () {
-        this.currSequence.phase++;
-    },
-    isDone: function () {
-        return this.currSequence.phase >= this.currSequence.maxPhase;
-    },
-    sequenceName: function () {
-        return this.currSequence.sequence;
-    },
-    run: function (c) {
-        try {
-            if (!this.inSequence()) {
-                this.startSequence('moveRandom');
-                return this.run(c);
+        },
+        inSequence: function () {
+            return this.currSequence.state;
+        },
+        startSequence: function (f, par) {
+            if(!this.patterns[f]){
+                throw "Sequence " + f + " does not exist!";
+            }
+            var p = this.patterns[f].maxPhase;
+            if (p) {
+                this.currSequence = {
+                    state: true,
+                    sequence: f,
+                    phase: 0,
+                    maxPhase: p,
+                    parameters: par
+                };
             } else {
-                var ret;
-                if (!this.currSequence.path) {
-                    ret = this.patterns[this.sequenceName()].f(this.currSequence.phase, this.currSequence.parameters);
-                } else {
-                    var node = this.currSequence.path[this.currSequence.phase];
-                    ret = {x: node.x - c.x, y: node.y - c.y};
+                var path = this.patterns[f].f(0, par);
+                if (path) {
+                    this.currSequence = {
+                        state: true,
+                        sequence: f,
+                        phase: 0,
+                        maxPhase: path.length - 1,
+                        path: path
+                    };
                 }
+            }
+        },
+        endSequence: function () {
+            this.currSequence = {
+                state: false,
+                sequence: '',
+                phase: 0,
+                maxPhase: -1
+            }
+        },
+        incPhase: function () {
+            this.currSequence.phase++;
+        },
+        isDone: function () {
+            return this.currSequence.phase >= this.currSequence.maxPhase;
+        },
+        sequenceName: function () {
+            return this.currSequence.sequence;
+        },
+        run: function (c) {
+            try {
+                if (!this.inSequence()) {
+                    this.startSequence('default');
+                    return this.run(c);
+                }
+
+                var ret = this.runSpec(c);
 
                 this.incPhase();
                 if (this.isDone()) {
                     this.endSequence();
                 }
 
-                if (Math.abs(ret.x) > 1 || Math.abs(ret.y) > 1) {
-                    throw "Critter teleported!"
-                }
                 return ret;
-            }
 
-        } catch (e) {
-            console.error('SEQUENCE BROKEN, EXCEPTION THROWN');
-            console.error('sequence', this.sequenceName(), 'state', this.currSequence.state, 'this', c, 'modifier', ret, 'parameters', this.currSequence.parameters);
-            if (this.currSequence.path) {
-                console.error('path', this.currSequence.path, 'phase', this.currSequence.phase, 'maxphase', this.currSequence.maxPhase, 'curr', this.currSequence.path[this.currSequence.phase])
+            } catch (e) {
+                console.error('Sequence Broken!', this.sequenceName(), 'state', this.currSequence.state, 'this', c, 'modifier', ret, 'parameters', this.currSequence.parameters);
+                if (this.currSequence.path) {
+                    console.error('path', this.currSequence.path, 'phase', this.currSequence.phase, 'maxphase', this.currSequence.maxPhase, 'curr', this.currSequence.path[this.currSequence.phase])
+                }
+                throw e;
             }
-            throw e;
+        },
+        patterns: {}
+    }
+};
+
+
+LIB.animations = $.extend(true, LIB.sequenceWrapper(),{
+    runSpec: function(c){
+        var def = `opacity: ${c.opacity}; transform: rotate(${c.rotation-90}deg);`;
+        return def + this.patterns[this.sequenceName()].f();
+    },
+    patterns: {
+        default:{
+            'f': () => {
+                return '';
+            }, maxPhase: Infinity,
+        },
+        dying: {
+            'f': () => {
+                var animParam = `-webkit-animation-name: dying; -webkit-animation-duration: 0.3s;
+                                -webkit-transform-origin:50% 50%; -webkit-animation-iteration-count: infinite;
+                                -webkit-animation-timing-function: linear;`;
+                return animParam;
+            }, maxPhase: Infinity
         }
+    }
+});
+
+
+LIB.entitySequences = $.extend(LIB.sequenceWrapper(), {
+    runSpec: function(c){
+        var ret;
+        if (!this.currSequence.path) {
+            ret = this.patterns[this.sequenceName()].f(this.currSequence.phase, this.currSequence.parameters);
+        } else {
+            var node = this.currSequence.path[this.currSequence.phase];
+            ret = {x: node.x - c.x, y: node.y - c.y};
+        }
+        if (Math.abs(ret.x) > 1 || Math.abs(ret.y) > 1) {
+            throw "Critter teleported!"
+        }
+        return ret;
     },
     patterns: {
         moveBlock: {
@@ -245,7 +279,7 @@ LIB.entitySequences = {
                 return par;
             }, maxPhase: 5
         },
-        moveRandom: {
+        default: {
             'f': (p, par) => {
                 var xfac = 0;
                 var yfac = 0;
@@ -342,5 +376,4 @@ LIB.entitySequences = {
             }
         }
     }
-
-};
+});

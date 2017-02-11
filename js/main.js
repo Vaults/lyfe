@@ -9,7 +9,6 @@ $(document).keyup(function (e) {
     KEYS_DOWN[e.which] = false;
 });
 $(document).mousedown(function (e) {
-    console.log('wat');
     KEYS_DOWN['mouse'] = true;
 });
 $(document).mouseup(function (e) {
@@ -43,7 +42,7 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
     };
     var createCritter = function (x, y) {
         var a = LIB.pickRandom(alpha);
-        var maxHunger = LIB.rand(100,200);
+        var maxHunger = LIB.rand(1000,2000);
         var parameters = {
             fearLevel: LIB.rand(50),
             perception: LIB.rand(4,6),
@@ -59,6 +58,7 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
     }
     var critter = (c, cl, x, y, parameters)=> $.extend(true, tile(c, cl, x, y, parameters), {
         sequences: LIB.entitySequences,
+        animations: LIB.animations,
 
         senseSurroundings: function () {
             return LIB.getNeighbors(this, $scope.objs, this.perception);
@@ -123,7 +123,7 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
             }
         },
         bored: function (grid) {
-            this.sequences.startSequence('moveRandom');
+            this.sequences.startSequence('default');
             var r = LIB.rand(1 / CONF.seqChance);
             if (r < 1) {
                 this.sequences.startSequence('moveBlock', LIB.flipCoin());
@@ -155,20 +155,24 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
                 throw e;
             }
         },
+        die: function(){
+            $scope.objs[this.x][this.y] = null;
+        },
         be: function(grid){
             this.reactToSurroundings(grid);
             this.hunger -= this.hungriness/10;
-            if(this.hunger <= 0){
-                this.die();
-            }
             if (!this.sequences.inSequence()) {
+                this.animations.startSequence('default');
                 this.bored(grid);
             }
-
+            if(this.hunger <= 0.25*this.maxHunger) {
+                this.animations.startSequence('dying');
+                if (this.hunger <= 0) {
+                    this.die();
+                }
+            }
+            this.style = this.animations.run(this);
             return this.move(grid);
-        },
-        die: function(){
-            $scope.objs[this.x][this.y] = null;
         },
         status: function(){
             return ~~((this.hunger/this.maxHunger)*100);
@@ -274,9 +278,10 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
             if(ordBeg[i] !== undefined){doTimeout(ordBeg[i], i); ch.push(ordBeg[i]);}
             if(ordEnd[i] !== undefined){doTimeout(ordEnd[i], i+0.5); ch.push(ordEnd[i]);}
         }
+
         if(JSON.stringify(ch.sort((a,b)=>a-b)) != JSON.stringify(order)){
             console.error(order, ordBeg, ordEnd, ch);
-            throw "SOMETHAN AINT RITE";
+            throw "Tile rendering failed!";
         }
 
     }
@@ -398,6 +403,12 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
         }
     };
     $scope.click = function (o) {
+        if(!$scope.clicked){
+            $scope.clicked = true;
+            $scope.currentTile = o;
+        }else{
+            $scope.clicked = false;
+        }
         $scope.paintTool.paint(o);
     }
 
@@ -409,7 +420,9 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
         } else if($scope.paintTool.isSetPaintRem()) {
             $scope.paintTool.clearPaintRem();
         }
-        $scope.currentTile = o;
+        if(!$scope.clicked) {
+            $scope.currentTile = o;
+        }
     }
 })
 

@@ -1,19 +1,22 @@
-body{
+body {
     -moz-user-select: none;
     -khtml-user-select: none;
     -webkit-user-select: none;
     -ms-user-select: none;
     user-select: none;
 }
-table.mainTable{
+
+table.mainTable {
     border: 2px solid black;
     border-spacing: inherit;
     float: left;
 }
-.root{
+
+.root {
     display: inline-flex;
 }
-.sidebar{
+
+.sidebar {
     width: 10vw;
     font-family: sans-serif;
     font-size: x-large;
@@ -22,50 +25,62 @@ table.mainTable{
     margin: 75px;
     height: 100%;
 }
-.sidebar .small{
+
+.sidebar .small {
     font-size: xx-small;
     color: white;
     word-wrap: break-word;
-    max-width: 100px;
+    max-width: 80px;
+    margin-left: auto;
+    margin-right: auto;
 }
-.sidebar table{
+
+.sidebar table {
     width: 100%;
     text-align: center;
     font-size: small;
     border-spacing: 0px;
     border-collapse: collapse;
 }
-.sidebar td{
+
+.sidebar td {
     border: 1px darkgreen solid;
+    width: 100px
 
 }
-.round{
-    box-shadow: 2px 2px 7px -2px rgba(0,0,0,0.75);
+
+.round {
+    box-shadow: 2px 2px 7px -2px rgba(0, 0, 0, 0.75);
 }
-.shadow{
+
+.shadow {
     border-radius: 5px;
 }
-table.mainTable tr{
+
+table.mainTable tr {
     font-family: sans-serif;
     margin: 0px;
 }
-.cont{
+
+.cont {
     width: 15px;
     height: 15px;
     border: 1px solid #80e080;
     margin: -1px;
     text-align: center;
     color: white !important;
-    font-size: small;
+    font-size: x-small;
 }
-.cont-lg{
+
+.cont-lg {
     width: 50px;
     height: 50px;
     font-size: xx-large;
     margin-left: auto;
     margin-right: auto;
 }
-.loading{
+
+.loading {
     text-align: center;
     display: block;
     position: fixed;
@@ -76,13 +91,16 @@ table.mainTable tr{
     font-size: small;
     z-index: 100;
 }
+
 .loading-bg {
-    background-color: rgba(251,240,228,0.6);
+    background-color: rgba(251, 240, 228, 0.6);
 
 }
-.loading-bg-opaque{
-    background: rgba(251,240,228,1);
+
+.loading-bg-opaque {
+    background: rgba(251, 240, 228, 1);
 }
+
 .statusbar {
     width: 100%;
     height: 10%;
@@ -90,7 +108,44 @@ table.mainTable tr{
     margin: 0px;
     background-color: red;
 }
+
 .statusbar .fill {
     height: 100%;
     background-color: green;
+}
+
+@keyframes dying {
+    0% {
+        transform: translate(2px, 1px);
+    }
+    10% {
+        transform: translate(-1px, -2px);
+    }
+    20% {
+        transform: translate(-3px, 0px);
+    }
+    30% {
+        transform: translate(0px, 2px);
+    }
+    40% {
+        transform: translate(1px, -1px);
+    }
+    50% {
+        transform: translate(-1px, 2px);
+    }
+    60% {
+        transform: translate(-3px, 1px);
+    }
+    70% {
+        transform: translate(2px, 1px);
+    }
+    80% {
+        transform: translate(-1px, -1px);
+    }
+    90% {
+        transform: translate(2px, 2px);
+    }
+    100% {
+        transform: translate(1px, -2px);
+    }
 }
