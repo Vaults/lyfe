@@ -1,0 +1,9 @@
+short-term:
+-animations: death, eating, running away, idles
+
+
+long-term:
+-moar realisms
+-code cleaning
+-memory in brain
+-sounds

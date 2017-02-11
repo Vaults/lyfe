@@ -29,35 +29,57 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
                 }
             }
         }
-        return $.extend({char: c, col: color, x: x, y: y}, par);
+        var t = $.extend({char: c, col: color, x: x, y: y, opacity:0.5}, par);
+        t.printParam = function(){
+            var p = {};
+            for(key in par){
+                if(typeof t[key] != "function") {
+                    p[key] = t[key];
+                }
+            }
+            return $.extend({x: t.x, y: t.y}, p);
+        }
+        return t;
     };
     var createCritter = function (x, y) {
         var a = LIB.pickRandom(alpha);
-        return critter(a, LIB.rand(360), x, y, 0, LIB.rand(50), LIB.rand(4, 6));// LIB.rand(2, 8));
+        var maxHunger = LIB.rand(100,200);
+        var parameters = {
+            fearLevel: LIB.rand(50),
+            perception: LIB.rand(4,6),
+            maxHunger: maxHunger,
+            hunger: maxHunger +1-1, //lazy new value
+            hungriness: LIB.rand(1,10),
+            eating: false,
+            rotation: 0,
+            opacity: 0.6,
+            type: 'critter'
+        }
+        return critter(a, LIB.rand(360), x, y, parameters);// LIB.rand(2, 8));
     }
-    var critter = (c, cl, x, y, rot, fearLevel, perception)=> $.extend(true, tile(c, cl, x, y), {
-        rotation: rot,
+    var critter = (c, cl, x, y, parameters)=> $.extend(true, tile(c, cl, x, y, parameters), {
         sequences: LIB.entitySequences,
+
         senseSurroundings: function () {
-            return LIB.getNeighbors(this, $scope.objs, perception);
+            return LIB.getNeighbors(this, $scope.objs, this.perception);
         },
         calcFearScore: function (c) {
             return Math.abs(this.col.hue - c.col.hue);
         },
         isThreat: function (c) {
             if (c.move) {
-                var par = this.calcFearScore(c) + LIB.rand(fearLevel);
-                return par > 120 && LIB.euclideanDistance(this, c) < perception;
+                var par = this.calcFearScore(c) + LIB.rand(this.fearLevel);
+                return par > 120 && LIB.euclideanDistance(this, c) < this.perception;
             }
             return false;
         },
         findClosestFood: function (surr) {
-            return surr.filter(o=>o.isFood).sort((a, b)=>LIB.euclideanDistance(this, a) - LIB.euclideanDistance(this, b))[0];
+            return surr.filter(o=>o.type == "food").sort((a, b)=>LIB.euclideanDistance(this, a) - LIB.euclideanDistance(this, b))[0];
         },
         reactToSurroundings: function (grid) {
-            var surr = this.senseSurroundings(this.x, this.y).filter(o=>!o.isWall);
-            surr = surr.sort((a, b) => this.calcFearScore(a) - this.calcFearScore(b));
-            if (surr.length > 0) {
+            var surr = this.senseSurroundings(this.x, this.y);
+
+            if (surr.filter(o=>o.type=="critter").sort((a, b) => this.calcFearScore(a) - this.calcFearScore(b)).length > 0) {
                 if (this.isThreat(surr[0])) {
                     //oh no run away
                     if (LIB.flipCoin()) {
@@ -74,13 +96,30 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
                     }
                 } else {
                     var f = this.findClosestFood(surr);
-                    if (f && LIB.getNeighbors(f, $scope.objs).length < 2 && LIB.manhattanDistance(this, f) > 1 && this.sequences.sequenceName() != "moveTo") {
-                        var grid = $.extend(true, {}, grid);
-                        grid[f.x][f.y] = {x: f.x, y: f.y};
-                        var par = {grid: grid, from: this, to: {x: f.x, y: f.y}};
-                        this.sequences.startSequence('moveTo', par);
+                    if(f) {
+                        if (this.hunger < this.maxHunger * 0.75 && !this.eating) {
+                            this.foodTime(f, grid);
+                        } else if(this.hunger < this.maxHunger * 0.9 && this.eating){
+                            this.sequences.startSequence('moveStill');
+                            this.hunger += this.hungriness;
+                            f.food -= this.hungriness;
+                            if(f.food < 0){
+                                f.die();
+                            }
+                        } else{
+                            this.eating = false;
+                        }
                     }
                 }
+            }
+        },
+        foodTime: function(f, grid){
+            if(LIB.euclideanDistance(this, f) == 1){this.eating = true;}
+            else{
+                var grid = $.extend(true, {}, grid);
+                grid[f.x][f.y] = {x: f.x, y: f.y};
+                var par = {grid: grid, from: this, to: {x: f.x, y: f.y}};
+                this.sequences.startSequence('moveTo', par)
             }
         },
         bored: function (grid) {
@@ -100,19 +139,13 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
             }
         },
         move: function (grid) {
-
-            this.reactToSurroundings(grid);
-            if (!this.sequences.inSequence()) {
-                this.bored(grid);
-            }
-
             var mod = this.sequences.run(this);
 
             try {
                 if (Math.abs(mod.x) + Math.abs(mod.y) > 1) {
                     throw "Critter teleported!"
                 }
-                var ret = {
+                return {
                     'from': this,
                     'to': {x: LIB.clamp(0, this.x + mod.x, CONF.s - 1), y: LIB.clamp(0, this.y + mod.y, CONF.s - 1)}
                 };
@@ -121,13 +154,30 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
                 console.error('mod', mod, 'sequence', this.sequences.currSequence);
                 throw e;
             }
-            return ret;
+        },
+        be: function(grid){
+            this.reactToSurroundings(grid);
+            this.hunger -= this.hungriness/10;
+            if(this.hunger <= 0){
+                this.die();
+            }
+            if (!this.sequences.inSequence()) {
+                this.bored(grid);
+            }
+
+            return this.move(grid);
+        },
+        die: function(){
+            $scope.objs[this.x][this.y] = null;
+        },
+        status: function(){
+            return ~~((this.hunger/this.maxHunger)*100);
         }
     });
 
     var emptyTile = (x, y) => tile(' ', 'lightgreen', x, y);
-    var foodTile = (x, y) => tile(' ', '#fffbd3', x, y, {isFood: true, paintable: true});
-    var wallTile = (x, y) => tile(' ', 'steelblue', x, y, {isWall: true, paintable: true});
+    var foodTile = (x, y) => tile(LIB.pickRandom(['🍏','🍊','🍌','🍉','🍇','🍓','🌽','🍖']), '#fffbd3', x, y, {type:'food', paintable: true, food: 1000, die: function(){$scope.objs[this.x][this.y] = null;}, status: function(){return ~~(this.food/10)}});
+    var wallTile = (x, y) => tile((LIB.randOutOf(1,10))?' ':LIB.pickRandom(['🌾','🌱']), 'steelblue', x, y, {type:'wall', paintable: true});
     var alpha = ['😎', '🙈', '🙊', '🐶', '🐺', '🐱', '🐴', '🐷', '🐹', '🐰', '🐼', '🐻'];
     //['x', 'a', 'o', 'c', 'e', 'u', 'z', 'n', 'w', 'v', '#', '@', '€', '^', '-', '+', '='];
 
@@ -135,6 +185,7 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
     $scope.help = [
         {'key':'W', 'f':'Brush: Wall'},
         {'key':'F', 'f':'Brush: Food'},
+        {'key':'A', 'f':'Brush: Animal'},
         {'key':'C', 'f':'Clear'},
         {'key':'N', 'f':'Generate Land'},
         {'key':'SPACE', 'f':'Draw'},
@@ -144,7 +195,7 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
         $scope.objs.forEach((o, x) => {
             if (o) {
                 for (y in o) {
-                    if (o[y] && !o[y].move) {
+                    if (o[y] && !o[y].be) {
                         $scope.objs[x][y] = null;
                     }
                 }
@@ -220,13 +271,12 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
         var ordEnd = order.slice(~~(l / 2));
         var ch = [];
         for(var i = 0; i < Math.max(ordBeg.length, ordEnd.length); i++){
-            console.log(ordBeg.length, ordEnd.length);
             if(ordBeg[i] !== undefined){doTimeout(ordBeg[i], i); ch.push(ordBeg[i]);}
             if(ordEnd[i] !== undefined){doTimeout(ordEnd[i], i+0.5); ch.push(ordEnd[i]);}
         }
         if(JSON.stringify(ch.sort((a,b)=>a-b)) != JSON.stringify(order)){
             console.error(order, ordBeg, ordEnd, ch);
-            throw "SOMETHAN AINT RITE"
+            throw "SOMETHAN AINT RITE";
         }
 
     }
@@ -253,8 +303,8 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
             for (key in y) {
                 o = y[key];
                 if (o) {
-                    if (o.move) {
-                        moves.push(o.move(grid));
+                    if (o.be) {
+                        moves.push(o.be(grid));
                     }
                 }
             }
@@ -278,6 +328,9 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
         }
         if (KEYS_DOWN[87]) {
             $scope.paintTool.setBrush(wallTile);
+        }
+        if (KEYS_DOWN[65]){
+            $scope.paintTool.setBrush(createCritter);
         }
         if (KEYS_DOWN[67]) {
             clearMap();
@@ -313,6 +366,7 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
 
     $scope.paintTool = {
         rem: null,
+        previewBrush: null,
         setPaintRem: function (r) {
             if (!this.isSetPaintRem()) {
                 this.rem = r;
@@ -328,6 +382,7 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
         },
         currBrush: wallTile,
         setBrush: function (f) {
+            this.previewBrush = f(0,0);
             this.currBrush = f;
         },
         brush: function (x, y) {

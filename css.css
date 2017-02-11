@@ -25,6 +25,8 @@ table.mainTable{
 .sidebar .small{
     font-size: xx-small;
     color: white;
+    word-wrap: break-word;
+    max-width: 100px;
 }
 .sidebar table{
     width: 100%;
@@ -80,4 +82,15 @@ table.mainTable tr{
 }
 .loading-bg-opaque{
     background: rgba(251,240,228,1);
+}
+.statusbar {
+    width: 100%;
+    height: 10%;
+    padding: 0px;
+    margin: 0px;
+    background-color: red;
+}
+.statusbar .fill {
+    height: 100%;
+    background-color: green;
 }

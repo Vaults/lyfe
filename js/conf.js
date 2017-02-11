@@ -2,7 +2,7 @@
  * Created by Marcel on 21-1-2017.
  */
 var CONF = {
-    s: ~~($(window).height() / 15),
+    s: 42,
     rowCalcTime: 75,
     maxCritterCount: 50,
     moveChance: 0.10,

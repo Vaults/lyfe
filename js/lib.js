@@ -4,6 +4,7 @@ LIB.pickRandom = (a) => a[~~(Math.random() * a.length)];
 LIB.randNeg = (i) => (LIB.rand(1) == 1) ? i : -i;
 LIB.rand = (a, b) => (b) ? (a + Math.round(Math.random() * (b - a))) : Math.round(Math.random() * (a));
 LIB.flipCoin = () => LIB.rand(10) < 5;
+LIB.randOutOf = (a,b) => LIB.rand(b) > a;
 LIB.clamp = (a, x, b) => (x < a) ? a : ((x > b) ? b : x);
 LIB.eqCoords = (a, b) => a.x == b.x && a.y == b.y;
 LIB.trueMod = (n, m) => ((n % m) + m) % m;
@@ -194,7 +195,7 @@ LIB.entitySequences = {
             } else {
                 var ret;
                 if (!this.currSequence.path) {
-                    ret = this.patterns[this.currSequence.sequence].f(this.currSequence.phase, this.currSequence.parameters);
+                    ret = this.patterns[this.sequenceName()].f(this.currSequence.phase, this.currSequence.parameters);
                 } else {
                     var node = this.currSequence.path[this.currSequence.phase];
                     ret = {x: node.x - c.x, y: node.y - c.y};
@@ -213,7 +214,7 @@ LIB.entitySequences = {
 
         } catch (e) {
             console.error('SEQUENCE BROKEN, EXCEPTION THROWN');
-            console.error('sequence', this.currSequence.sequence, 'state', this.currSequence.state, 'this', c, 'modifier', ret, 'parameters', this.currSequence.parameters);
+            console.error('sequence', this.sequenceName(), 'state', this.currSequence.state, 'this', c, 'modifier', ret, 'parameters', this.currSequence.parameters);
             if (this.currSequence.path) {
                 console.error('path', this.currSequence.path, 'phase', this.currSequence.phase, 'maxphase', this.currSequence.maxPhase, 'curr', this.currSequence.path[this.currSequence.phase])
             }
@@ -246,7 +247,7 @@ LIB.entitySequences = {
         },
         moveRandom: {
             'f': (p, par) => {
-                var xfac = 0
+                var xfac = 0;
                 var yfac = 0;
                 if (LIB.rand(1 / CONF.moveChance) < 1) {
                     if (LIB.rand(1) > 0) {

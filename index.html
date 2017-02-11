@@ -38,7 +38,10 @@
                     <td ng-repeat="c in row track by $index">
                         <a ng-click="click(c)" ng-mouseover="mouseover(c)">
                             <div class="cont" style="background-color: {{c.col.toString()}};">
-                                <div style="transform: rotate({{c.rotation}}deg);">
+                                <div class="statusbar" ng-show="c.status" style="opacity: {{1-(c.status()/100)}}">
+                                    <div class="fill" style="width: {{c.status()}}%"></div>
+                                </div>
+                                <div style="opacity: {{c.opacity}}; transform: rotate({{c.rotation}}deg);">
                                     {{c.char}}
                                 </div>
                             </div>
@@ -59,8 +62,8 @@
                     </td>
                     <td>
                         <div class="cont cont-lg"
-                             style="border: 1px black solid; background-color: {{paintTool.brush(0,0).col.toString()}}">
-                            &nbsp
+                             style="border: 1px black solid; background-color: {{paintTool.previewBrush.col.toString()}}">
+                            {{paintTool.previewBrush.char}}
                         </div>
                         <div class="small">&nbsp{{paintTool.rem}}</div>
                     </td>
@@ -76,7 +79,9 @@
                                 {{currentTile.char}}
                             </div>
                         </div>
-                        <div class="small">{{"{"+currentTile.x+","+currentTile.y+"}"}}</div>
+                        <div class="small" ng-repeat="(key,value) in currentTile.printParam()">
+                            {{key}}:{{value}}
+                        </div>
                     </td>
                 </tr>
 
