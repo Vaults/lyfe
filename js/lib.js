@@ -133,7 +133,16 @@ LIB.octileDistance = (a, b) => {
 }
 LIB.manhattanDistance = (a, b) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
 LIB.euclideanDistance = (a, b) => Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
-
+LIB.hashCode = function(s) {
+    var hash = 0, i, chr, len;
+    if (s.length === 0) return hash;
+    for (i = 0, len = s.length; i < len; i++) {
+        chr   = s.charCodeAt(i);
+        hash  = ((hash << 5) - hash) + chr;
+        hash |= 0; // Convert to 32bit integer
+    }
+    return hash;
+};
 
 LIB.sequenceWrapper = function() {
     return {
@@ -230,9 +239,18 @@ LIB.animations = $.extend(true, LIB.sequenceWrapper(),{
                 return '';
             }, maxPhase: Infinity,
         },
-        dying: {
+        shaking: {
             'f': () => {
                 var animParam = `-webkit-animation-name: dying; -webkit-animation-duration: 0.3s;
+                                -webkit-transform-origin:50% 50%; -webkit-animation-iteration-count: infinite;
+                                -webkit-animation-timing-function: linear;`;
+                return animParam;
+            }, maxPhase: Infinity
+        },
+        rotating: {
+            'f': () => {
+                var color = 'color: RED';
+                var animParam = `-webkit-animation-name: eating; -webkit-animation-duration: 0.3s;
                                 -webkit-transform-origin:50% 50%; -webkit-animation-iteration-count: infinite;
                                 -webkit-animation-timing-function: linear;`;
                 return animParam;
@@ -284,8 +302,8 @@ LIB.entitySequences = $.extend(LIB.sequenceWrapper(), {
             'f': (p, par) => {
                 var xfac = 0;
                 var yfac = 0;
-                if (LIB.rand(1 / CONF.moveChance) < 1) {
-                    if (LIB.rand(1) > 0) {
+                if (LIB.randOutOf(1,5)) {
+                    if (LIB.flipCoin()) {
                         xfac = LIB.randNeg(LIB.rand(1));
                     } else {
                         yfac = LIB.randNeg(LIB.rand(1));

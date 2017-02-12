@@ -114,7 +114,7 @@ table.mainTable tr {
     background-color: green;
 }
 
-@keyframes dying {
+@keyframes shaking {
     0% {
         transform: translate(2px, 1px);
     }
@@ -147,5 +147,22 @@ table.mainTable tr {
     }
     100% {
         transform: translate(1px, -2px);
+    }
+}
+@keyframes rotating {
+    0% {
+        transform: rotate(0deg);
+    }
+    25% {
+        transform: rotate(90deg);
+    }
+    50% {
+        transform: rotate(180deg);
+    }
+    75% {
+        transform: rotate(270deg);
+    }
+    100% {
+        transform: rotate(0deg);
     }
 }

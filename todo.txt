@@ -1,7 +1,6 @@
 short-term:
 -animations: death, eating, running away, idles
--some form of food regeneration
-
+-more realistic world generation
 
 long-term:
 -moar realisms
