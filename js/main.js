@@ -15,8 +15,9 @@ $(document).mouseup(function (e) {
     KEYS_DOWN['mouse'] = false;
 });
 
-angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
+angular.module('life', []).controller('testCtrl', function ($scope, $timeout, $interval) {
     var tile = (c, cl, x, y, par) => {
+        par.id = $scope.id++;
         var color = {};
         if (typeof cl == "string") {
             color.toString = () => cl;
@@ -176,7 +177,7 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
             return ~~((this.hunger/this.maxHunger)*100);
         }
     });
-    var treeTile = (x,y,parameters) => tile(LIB.pickRandom(['🌳', '🌲']),null,x,y, $.extend(parameters,{
+    var treeTile = (x,y,parameters) => tile(LIB.pickRandom(['🌳', '🌲', '🌴']),null,x,y, $.extend(parameters,{
         col: {
             hue: 100, sat: 100, br: 80,
             toString: function () {
@@ -190,10 +191,24 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
                 var ym = LIB.clamp(0, this.y + LIB.rand(-1,1), CONF.y-1);
                 return foodTile(xm,ym);
             }
-        }
+        },
+        type: 'tree',
+        contStyle: 'border: 1px solid green'
     }));
     var emptyTile = (x, y, ch) => tile(' ', 'lightgreen', x, y, {contStyle: (ch>0.9)?"background-image: url('img/grass.png');":''});
-    var foodTile = (x, y) => tile(LIB.pickRandom(['🍏','🍊','🍌','🍉','🍇','🍓','🌽','🍖']), '#fffbd3', x, y, {type:'food', paintable: true, food: 1000, die: function(){$scope.objs[this.x][this.y] = null;}, status: function(){return ~~(this.food/10)}});
+    var foodTile = (x, y) => tile(LIB.pickRandom(['🍏','🍊','🍌','🍉','🍇','🍓','🌽','🍖']), '#fffbd3', x, y,
+        {
+            type: 'food',
+            paintable: true,
+            food: 1000,
+            die: function () {
+                $scope.objs[this.x][this.y] = null;
+            },
+            status: function () {
+                return ~~(this.food / 10)
+            },
+            contStyle: 'border: 1px solid burlywood'
+        });
     var wallTile = (x, y) => tile((LIB.randOutOf(1,10))?LIB.pickRandom(['🌾','🌱']):' ', 'steelblue', x, y, {type:'wall', paintable: true, contStyle:'border: 1px solid #4070a0'});
     var alpha = ['😎', '🙈', '🙊', '🐶', '🐺', '🐱', '🐴', '🐷', '🐹', '🐰', '🐼', '🐻'];
     //['x', 'a', 'o', 'c', 'e', 'u', 'z', 'n', 'w', 'v', '#', '@', '€', '^', '-', '+', '='];
@@ -207,7 +222,8 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
         {'key':'C', 'f':'Clear'},
         {'key':'N', 'f':'Generate Land'},
         {'key':'SPACE', 'f':'Draw'},
-    ]
+    ];
+    $scope.id = 0;
     tileQueue = [];
     var clearMap = ()=> {
         $scope.objs.forEach((o, x) => {
@@ -221,7 +237,6 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
         })
     };
     var generateLand = () => {
-        $scope.coordinateSeeds = new Array(CONF.x).fill('').map(o=>[]);
         var tempMap = new Array(CONF.x).fill('').map(o=>({}));
         for (var i = 0; i < CONF.x * CONF.wallFactor; i++) {
             var x = LIB.rand(CONF.x - 1);
@@ -241,7 +256,6 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
 
         for (x in tempMap) {
             for (y in tempMap[x]) {
-
                 if (y) {
                     if (!$scope.objs[x][y]) {
                         $scope.objs[x][y] = wallTile(x, y);
@@ -256,7 +270,7 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
         }
     };
     var generateCritters = () => {
-        for (var i = 0; i < CONF.maxCritterCount; i++) {
+        for (var i = 0; i < CONF.crittersPerSquareM*CONF.x*CONF.y; i++) {
 
             var x = LIB.rand(CONF.x - 1);
             var y = LIB.rand(CONF.y - 1);
@@ -273,6 +287,8 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
         $scope.ready = false;
         $scope.objs = new Array(CONF.x).fill('').map(o => ({}));
         Math.seedrandom(CONF.seed);
+        $scope.coordinateSeeds = new Array(CONF.x).fill('').map(o=>[]);
+        $scope.emptyTiles = new Array(CONF.x).fill('').map(o=>[]);
         generateLand();
         generateCritters();
 
@@ -280,12 +296,12 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
          Angular DOM rendering is kinda slow and dunno how to delay it
          Circumventing by doing loading slower
          */
-        $scope.field = new Array(CONF.y).fill('').map(o=>([]));
+        $scope.field = new Array(CONF.x).fill('').map(o=>([]));
         function doTimeout(x, i) {
             $timeout(function () {
                 for (var y = 0; y < CONF.y; y++) {
-                    $scope.coordinateSeeds[x][y] = new Math.seedrandom(x*1000+y*1500+CONF.seed)();
-                    $scope.field[y][x] = ($scope.objs[x][y]) ? $scope.objs[x][y] : emptyTile(x, y, $scope.coordinateSeeds[x][y]);
+                    $scope.emptyTiles[x][y] = emptyTile(x,y,Math.random());
+                    $scope.field[x][y] = ($scope.objs[x][y]) ? $scope.objs[x][y] : $scope.emptyTiles[x][y];
                 }
             }, i * CONF.rowCalcTime);
         }
@@ -312,13 +328,13 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
         Math.seedrandom(new Date().toString());
     }
     var render = () => {
-        $scope.field.forEach((yo, y)=>yo.forEach((xo, x)=> {
+        $scope.field.forEach((xo, x)=>xo.forEach((yo, y)=> {
             if ($scope.objs[x][y]) {
                 if (yo !== $scope.objs[x][y]) {
-                    $scope.field[y][x] = ($scope.objs[x][y]);
+                    $scope.field[x][y] = ($scope.objs[x][y]);
                 }
             } else {
-                $scope.field[y][x] = emptyTile(x, y, $scope.coordinateSeeds[x][y]);
+                $scope.field[x][y] = $scope.emptyTiles[x][y];
             }
         }))
     }
@@ -327,9 +343,9 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
         var creates = [];
         var grid = new Array(CONF.x).fill('').map((o, x) => new Array(CONF.y).fill('').map((o, y) => ($scope.objs[x][y]) ? null : {x: x, y: y, f: 0, g: 0, h: 0, visited: false}));
 
-        $scope.objs.forEach(y => {
-            for (key in y) {
-                o = y[key];
+        $scope.objs.forEach(x => {
+            for (y in x) {
+                o = x[y];
                 if (o && o.be) {
                     var move = o.be(grid);
                     if(move){
@@ -390,20 +406,48 @@ angular.module('life', []).controller('testCtrl', function ($scope, $timeout) {
     }
 
     var engineLoop = () => {
+
+
         addPaintedTiles();
         handleKeys();
-        doMoves();
-        render();
-        $timeout(engineLoop, 1000 / CONF.FPS);
+         doMoves();
+         render();
+
+        $scope.amounts = {};
+        $scope.objs.forEach(x=>{
+            for(y in x){
+                if(x[y]){
+                    if(!$scope.amounts[x[y].type]){
+                        $scope.amounts[x[y].type]=0
+                    }
+                    $scope.amounts[x[y].type]++;
+                }
+            }
+        });
+        LIB.sortObject($scope.amounts);
+         
+
+        $scope.framecount++;
+        var diff = (new Date().getTime() - $scope.calcTime)/1000;
+        $scope.elapsedTime += diff;
+        $scope.elapsedTime = +$scope.elapsedTime.toFixed(2);
+        $scope.calcTime = new Date().getTime();
+        if($scope.framecount % 10 == 0) {
+            $scope.FPS = (1000*$scope.framecount/(new Date().getTime() - $scope.beginTime)).toFixed(2);
+        }
     };
 
 
     initEngine();
+    $scope.calcTime = new Date().getTime();
+    $scope.elapsedTime = 0;
+    $scope.FPS = 60;
+    $scope.framecount = 0;
     $timeout(() => {
         $scope.ready = true;
-        engineLoop();
+        $scope.beginTime = new Date().getTime();
+        $interval(engineLoop, 10);
     }, CONF.rowCalcTime * CONF.x);
-
 
     $scope.paintTool = {
         rem: null,

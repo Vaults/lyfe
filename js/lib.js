@@ -133,16 +133,29 @@ LIB.octileDistance = (a, b) => {
 }
 LIB.manhattanDistance = (a, b) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
 LIB.euclideanDistance = (a, b) => Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
-LIB.hashCode = function(s) {
-    var hash = 0, i, chr, len;
-    if (s.length === 0) return hash;
-    for (i = 0, len = s.length; i < len; i++) {
-        chr   = s.charCodeAt(i);
-        hash  = ((hash << 5) - hash) + chr;
-        hash |= 0; // Convert to 32bit integer
+LIB.sortObject = (o) =>{
+    Object.keys(o).sort().forEach(function(k) {
+        var value = o[k];
+        delete o[k];
+        o[k] = value;
+    });
+}
+LIB.circularArray = (n, def) => {
+    var data = new Array(n).fill((def)?def:0);
+    return {
+        data: data,
+        pointer: 0,
+        push: function(o){
+            this.pointer = (this.pointer + 1) % this.data.length;
+            data[this.pointer] = o;
+        },
+        reduce: function(cb){
+            return this.data.reduce(cb);
+        },
+        length: n
     }
-    return hash;
-};
+}
+
 
 LIB.sequenceWrapper = function() {
     return {

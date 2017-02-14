@@ -1,9 +1,14 @@
 short-term:
--animations: death, eating, running away, idles
+-animations: running away, idles
 -more realistic world generation
+-food decay
+-critter-critter interaciton
+
 
 long-term:
 -moar realisms
 -code cleaning
 -memory in brain
+-saving
+-player-critter interaction
 -sounds

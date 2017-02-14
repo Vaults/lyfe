@@ -34,9 +34,9 @@
             </table>
         </div>
         <div>
-            <table class="mainTable shadow" draggable="false">
-                <tr ng-repeat="row in field">
-                    <td ng-repeat="c in row track by $index">
+            <div class="mainTable shadow" draggable="false">
+                <div ng-repeat="row in field track by $index">
+                    <div ng-repeat="c in row track by c.id + c.char">
                         <a ng-click="click(c)" ng-mouseover="mouseover(c)">
                             <div class="cont" style="background-color: {{c.col.toString()}}; {{c.contStyle}} ">
                                 <div class="statusbar" ng-show="c.status" style="opacity: {{1-(c.status()/100)}}">
@@ -47,9 +47,9 @@
                                 </div>
                             </div>
                         </a>
-                    </td>
-                </tr>
-            </table>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="sidebar round">
             <table>
@@ -75,7 +75,7 @@
                     </td>
                     <td>
                         <div class="cont cont-lg"
-                             style="border: 1px black solid; background-color: {{currentTile.col.toString()}}">
+                             style="border: 1px black solid; background-color: {{currentTile.col.toString()}}; {{currentTile.contStyle}}">
                             <div class="statusbar" ng-show="currentTile.status">
                                 <div class="fill" style="width: {{currentTile.status()}}%"></div>
                             </div>
@@ -87,6 +87,33 @@
                             {{key}}:{{value}}
                         </div>
                     </td>
+                </tr>
+                <tr>
+                    <td>
+                        Time:
+                    </td>
+                    <td>
+                        {{elapsedTime}}
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        FPS:
+                    </td>
+                    <td>
+                        {{FPS}}
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        counts:
+                    </td>
+                    <td>
+                        <div class="small" ng-repeat="(key,value) in amounts">
+                            {{key}}:{{value}}
+                        </div>
+                    </td>
+
                 </tr>
 
             </table>

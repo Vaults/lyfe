@@ -4,6 +4,10 @@ body {
     -webkit-user-select: none;
     -ms-user-select: none;
     user-select: none;
+    -webkit-transform: translate3d(0, 0, 0);
+    -moz-transform: translate3d(0, 0, 0);
+    -ms-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
 }
 
 table.mainTable {
@@ -57,16 +61,15 @@ table.mainTable {
     border-radius: 5px;
 }
 
-table.mainTable tr {
-    font-family: sans-serif;
-    margin: 0px;
+.mainTable {
+    display: flex;
 }
 
 .cont {
     width: 15px;
     height: 15px;
     border: 1px solid #80e080;
-    margin: -1px;
+    margin: 0px;
     text-align: center;
     color: white !important;
     font-size: x-small;
