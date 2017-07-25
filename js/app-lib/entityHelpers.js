@@ -1,162 +1,150 @@
-var LIB = {};
-LIB.constants = {'octile':Math.sqrt(2) - 2}
-LIB.pickRandom = (a) => a[~~(Math.random() * a.length)];
-LIB.randNeg = (i) => (LIB.rand(1) == 1) ? i : -i;
-LIB.rand = (a, b) => (b) ? (a + Math.round(Math.random() * (b - a))) : Math.round(Math.random() * (a));
-LIB.flipCoin = () => LIB.rand(10) < 5;
-LIB.randOutOf = (a,b) => LIB.rand(b) <= a;
-LIB.clamp = (a, x, b) => (x < a) ? a : ((x > b) ? b : x);
-LIB.eqCoords = (a, b) => a.x == b.x && a.y == b.y;
-LIB.trueMod = (n, m) => ((n % m) + m) % m;
-LIB.nsew = (o, b) => (b.x > o.x) ? 'e' : ((b.x < o.x) ? 'w' : ((b.y < o.y) ? 'n' : 's'));
-LIB.xor = (a, b) => ( a || b ) && !( a && b );
-LIB.coordinateHashmap = () => {
-    var ret = {
-        data: {},
-        hash: function (o) {
-            return o.x + '-' + o.y;
-        },
-        push: function (o) {
-            this.data[this.hash(o)] = o;
-        },
-        remove: function (o) {
-            delete this.data[this.hash(o)]
-        },
-        contains: function (o) {
-            return !!this.data[this.hash(o)]
-        },
-        forall: function (callback) {
-            for (key in this.data) {
-                this.data[key] = callback(this.data[key])
+LIB.createCritter = ($scope, x, y, character, color, parameters)=> [x,y,character,color,$.extend(true, parameters, {
+    sequences: LIB.entitySequences,
+    animations: LIB.animations,
+    brain: {
+        rawMemory: {
+            data: [],
+            contains: function(o){
+                return !!this.data[o.id];
+            },
+            add: function(o){
+                data[o.id] = {obj: o};
             }
-        }
-    };
-    return ret;
-};
-LIB.heap = (comp) => ({
-    data: [],
-    comp: comp,
-    swap: function (i, j) {
-        var temp = this.data[i];
-        this.data[i] = this.data[j];
-        this.data[j] = temp;
-    },
-    bubDown: function (i) {
-        l = 2 * i + 1;
-        r = l + 1;
-        var lg = i;
-        if (l < this.data.length && this.comp(this.data[l], this.data[lg])) {
-            lg = l;
-        }
-        if (r < this.data.length && this.comp(this.data[r], this.data[lg])) {
-            lg = r;
-        }
-        if (lg != i) {
-            this.swap(lg, i);
-            this.bubDown(lg);
-        }
-    },
-    bubUp: function (i) {
-        if (i > 0) {
-            var p = ~~((i - 1) / 2);
-            if (this.comp(this.data[i], this.data[p])) {
-                this.swap(i, p);
-                this.bubUp(p);
-            }
-        }
-    },
-    pop: function () {
-        if (this.data.length === 0) {
-            throw new Error("pop on empty heap called!")
-        }
-        var ret = this.data[0];
-        var end = this.data.pop();
-        if (this.data.length > 0) {
-            this.data[0] = end;
-            this.bubDown(0);
-        }
-        return ret;
-    },
-    push: function (o) {
-        this.data.push(o);
-        this.bubUp(this.data.length - 1);
-    },
-    contains: (o) => LIB.coordinatesInArray(o, this.data) >= 0,
-    size: function () {
-        return this.data.length;
-    },
-    rescore: function (o) {
-        this.bubDown(this.data.indexOf(o));
-    }
-});
-LIB.yatesShuffle = a => {
-    var t = [];
-    while (a.length) {
-        var rI = a[~~(Math.random() * a.length)];
-        t.push(a.splice(rI, 1)[0]);
-    }
-    return t;
-}
-LIB.getNeighbors = (e, o, n) => {
-    var ret = [];
-    if (!n) {
-        n = 1;
-    }
+        },
+        absorbSurroundings: function(surr){
+            surr.forEach(o=>this.rawMemory.add);
+            //calc threat and modify each time on seeing block
 
-    for (var i = -1 * n; i <= 1 * n; i++) {
-        for (var j = -1 * n; j <= 1 * n; j++) {
-            var xn = e.x + i;
-            var yn = e.y + j;
-            if (xn >= 0 && xn < CONF.x && yn >= 0 && yn < CONF.y) {
-                if (o[xn] && o[xn][yn] && (Math.abs(i) != Math.abs(j) || n > 1)) {
-                    ret.push(o[xn][yn]);
+            //add non-reachable locations to mem
+        },
+        closestFood: function(surr){
+            //return closest food in memory
+        },
+        threat:function(surr){
+            //if any nearby remembered threat, run!
+        },
+        calculateDesire: {
+            //personality goes here
+            //parameters?
+        }
+    },
+    senseSurroundings: function () {
+        return LIB.getNeighbors(this, $scope.objs, this.perception);
+    },
+    calcFearScore: function (c) {
+        //todo: realistic-er
+        return Math.abs(this.col.hue - c.col.hue);
+    },
+    isThreat: function (c) {
+        if (c.move) {
+            const par = this.calcFearScore(c) + LIB.rand(this.fearLevel);
+            return par > 175 && LIB.euclideanDistance(this, c) < this.perception;
+        }
+        return false;
+    },
+    findClosestFood: function (surr) {
+        return surr.filter(o=>o.type === "food").sort((a, b)=>LIB.euclideanDistance(this, a) - LIB.euclideanDistance(this, b))[0];
+    },
+    reactToSurroundings: function (grid) {
+        const surr = this.senseSurroundings(this.x, this.y);
+        const threat = this.brain.threat(surr);
+        this.brain.absorbSurroundings(surr);
+        if (this.brain.threat(surr)) {
+            //oh no run away
+            this.animations.startSequence("rotating");
+            if (LIB.flipCoin()) {
+                const par = {x: LIB.negNormal(this.x - threat.x), y: LIB.negNormal(this.y - threat.y)};
+                if (LIB.flipCoin()) {
+                    par.x = 0;
+                } else {
+                    par.y = 0;
+                }
+                this.sequences.startSequence("moveLine", par);
+            } else {
+                this.sequences.startSequence("moveZigzag", LIB.nsew(this, surr[0]));
+            }
+        } else {
+            const f = this.brain.closestFood();
+            //todo: explain what is happening here
+            if(f) {
+                const nextTo = LIB.euclideanDistance(this, f) === 1;
+                if (this.hunger < this.maxHunger * 0.5 && (!this.eating || !nextTo)) {
+                    this.foodTime(f, grid);
+                } else if(this.hunger < this.maxHunger * 0.9 && this.eating && nextTo){
+                    this.sequences.startSequence("moveStill");
+                    this.animations.startSequence("shaking");
+                    this.hunger += this.hungriness;
+                    f.food -= this.hungriness;
+                } else{
+                    this.eating = false;
                 }
             }
         }
-    }
-    return ret;
-}
-LIB.coordinatesInArray = (c, a) => {
-    for (i in a) {
-        p = a[i];
-        if (p.x == c.x && p.y == c.y) {
-            return i;
+    },
+    foodTime: function(f, grid){
+        this.eating = true;
+        grid = $.extend(true, {}, grid);
+        grid[f.x][f.y] = {x: f.x, y: f.y};
+        const par = {grid: grid, from: this, to: {x: f.x, y: f.y}};
+        this.sequences.startSequence("moveTo", par);
+    },
+    bored: function (grid) {
+        this.sequences.startSequence("default");
+        const r = LIB.rand(1 / CONF.seqChance);
+        if (r < 1) {
+            this.sequences.startSequence("moveBlock", LIB.flipCoin());
+        } else if (r < 2) {
+            this.sequences.startSequence("moveZigzag", LIB.pickRandom(["n", "w", "s", "e"]));
+        } else if (r < 10) {
+            const par = {
+                grid: $.extend(true, {}, grid),
+                from: this,
+                to: {x: LIB.rand(CONF.x - 1), y: LIB.rand(CONF.y - 1)}
+            };
+            this.sequences.startSequence("moveTo", par);
         }
-    }
-    return -1;
-}
-LIB.octileDistance = (a, b) => {
-    var sq = LIB.constants['octile']; //octile distance
-    dx = Math.abs(a.x - b.x);
-    dy = Math.abs(a.y - b.y);
-    return (dx + dy) + sq * Math.min(dx, dy);
-}
-LIB.manhattanDistance = (a, b) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
-LIB.euclideanDistance = (a, b) => Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
-LIB.sortObject = (o) =>{
-    Object.keys(o).sort().forEach(function(k) {
-        var value = o[k];
-        delete o[k];
-        o[k] = value;
-    });
-}
-LIB.circularArray = (n, def) => {
-    var data = new Array(n).fill((def)?def:0);
-    return {
-        data: data,
-        pointer: 0,
-        push: function(o){
-            this.pointer = (this.pointer + 1) % this.data.length;
-            data[this.pointer] = o;
-        },
-        reduce: function(cb){
-            return this.data.reduce(cb);
-        },
-        length: n
-    }
-}
+    },
+    move: function (grid) {
+        const mod = this.sequences.run(this);
 
-
+        try {
+            if (Math.abs(mod.x) + Math.abs(mod.y) > 1) {
+                throw "Critter teleported!"
+            }
+            return {
+                "from": this,
+                "to": {x: LIB.clamp(0, this.x + mod.x, CONF.x - 1), y: LIB.clamp(0, this.y + mod.y, CONF.y - 1)}
+            };
+        } catch (e) {
+            console.error("RUN BROKEN, EXCEPTION THROWN");
+            console.error("mod", mod, "sequence", this.sequences.currSequence);
+            throw e;
+        }
+    },
+    die: function(){
+        $scope.objs[this.x][this.y] = null;
+    },
+    be: function(grid){
+        this.reactToSurroundings(grid);
+        this.hunger -= this.hungriness/10;
+        if (!this.sequences.inSequence()) {
+            this.animations.startSequence("default");
+            this.bored(grid);
+        }
+        if(this.hunger <= 0.25*this.maxHunger) {
+            this.animations.startSequence("rotating");
+            if (this.hunger <= 0) {
+                this.die();
+            }
+        }
+        this.style = this.animations.run(this);
+        return this.move(grid);
+    },
+    status: function(){
+        return ~~((this.hunger/this.maxHunger)*100);
+    }
+})];
+//todo: review
 LIB.sequenceWrapper = function() {
     return {
         currSequence: {
@@ -239,8 +227,6 @@ LIB.sequenceWrapper = function() {
         patterns: {}
     }
 };
-
-
 LIB.animations = $.extend(true, LIB.sequenceWrapper(),{
     runSpec: function(c){
         var def = `opacity: ${c.opacity}; transform: rotate(${c.rotation-90}deg);`;
@@ -271,8 +257,6 @@ LIB.animations = $.extend(true, LIB.sequenceWrapper(),{
         }
     }
 });
-
-
 LIB.entitySequences = $.extend(LIB.sequenceWrapper(), {
     runSpec: function(c){
         var ret;
@@ -326,7 +310,7 @@ LIB.entitySequences = $.extend(LIB.sequenceWrapper(), {
             }, maxPhase: 1
         },
         moveStill: {'f': (p, par)=> {
-           return {x: 0, y: 0};
+            return {x: 0, y: 0};
         }, maxPhase: 75},
         moveZigzag: {
             'f': (p, par)=> {

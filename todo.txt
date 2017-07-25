@@ -1,14 +1,13 @@
 short-term:
--animations: running away, idles
--more realistic world generation
--food decay
--critter-critter interaciton
+-critter-critter interaction
+-memory in brain
+-saving
 
 
 long-term:
--moar realisms
--code cleaning
--memory in brain
--saving
+-code cleaning (always)
 -player-critter interaction
 -sounds
+-rendering to Canvas
+    -animations: running away, idles
+    -more realistic world generation

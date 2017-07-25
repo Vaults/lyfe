@@ -7,7 +7,7 @@ var CONF = {
     rowCalcTime: 75,
     crittersPerSquareM: 0.0069,
     moveChance: 10,
-    FPS: 100,
+    FPS: 60,
     treesPerSquareM: 0.01,
     wallFactor: 0.6,
     seqChance: 0.00069,
