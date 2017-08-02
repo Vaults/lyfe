@@ -1,4 +1,5 @@
-LIB.createCritter = ($scope, x, y, character, color, parameters)=> [x,y,character,color,$.extend(true, parameters, {
+//todo: decouple scope
+LIB.createCritter = (scope, x, y, character, color, parameters)=> [x,y,character,color,$.extend(true, parameters, {
     sequences: LIB.entitySequences,
     animations: LIB.animations,
     brain: {
@@ -29,7 +30,7 @@ LIB.createCritter = ($scope, x, y, character, color, parameters)=> [x,y,characte
         }
     },
     senseSurroundings: function () {
-        return LIB.getNeighbors(this, $scope.objs, this.perception);
+        return LIB.getNeighbors(this, scope.objs, this.perception);
     },
     calcFearScore: function (c) {
         //todo: realistic-er
@@ -122,7 +123,7 @@ LIB.createCritter = ($scope, x, y, character, color, parameters)=> [x,y,characte
         }
     },
     die: function(){
-        $scope.objs[this.x][this.y] = null;
+        this.dead = true;
     },
     be: function(grid){
         this.reactToSurroundings(grid);

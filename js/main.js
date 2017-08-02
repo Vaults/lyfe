@@ -115,20 +115,24 @@ angular.module("life", []).controller("testCtrl", function ($scope, $timeout, $i
             $scope.objs[x].iterateKeys(y => {
                 const o = $scope.objs[x][y];
                 if(o) {
-                    if (o.be) {
-                        const move = o.be(grid);
-                        if (move) {
-                            moves.push(move);
+                    if(o.dead){
+                        $scope.objs[x][y] = null;
+                    } else {
+                        if (o.be) {
+                            const move = o.be(grid);
+                            if (move) {
+                                moves.push(move);
+                            }
                         }
-                    }
-                    if (o.beCreate) {
-                        const create = o.beCreate();
-                        if (create) {
-                            creates.push($scope.tileWrapper(...create));
+                        if (o.beCreate) {
+                            const create = o.beCreate();
+                            if (create) {
+                                creates.push($scope.tileWrapper(...create));
+                            }
                         }
-                    }
-                    if (o.think) {
-                        o.think();
+                        if (o.think) {
+                            o.think();
+                        }
                     }
                 }
             });

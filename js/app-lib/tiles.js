@@ -26,7 +26,7 @@ LIB.tileWrapper = (scope) => {
         return tile;
     }
 };
-LIB.treeTile = (x, y, parameters) => [x, y, LIB.pickRandom(["🌳", "🌲", "🌴"]), null, $.extend(parameters,{
+LIB.treeTile    = (x, y, parameters) => [x, y, LIB.pickRandom(["🌳", "🌲", "🌴"]), null, $.extend(parameters,{
     col: {
         hue: 100, sat: 100, br: 80,
         toString: function () {
@@ -50,7 +50,7 @@ LIB.foodTile    = (x, y) => [x, y, LIB.pickRandom(["🍏","🍊","🍌","🍉","
         paintable: true,
         food: 1000,
         die: function () {
-            $scope.objs[this.x][this.y] = null;
+            this.dead = true;
         },
         status: function () {
             return ~~(this.food / 10)
