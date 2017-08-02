@@ -1,6 +1,6 @@
 var KEYS_DOWN = {};
 $(document).keydown((e) => {
-    if(e.which === 32) {
+    if (e.which === 32) {
         e.preventDefault();
     }
     KEYS_DOWN[e.which] = true;
@@ -21,37 +21,36 @@ angular.module("life", []).controller("testCtrl", function ($scope, $timeout, $i
 
     const createCritter = function (x, y) {
         const a = LIB.pickRandom(LIB.constants.alpha);
-        const maxHunger = LIB.rand(1000,2000);
+        const maxHunger = LIB.rand(1000, 2000);
         const parameters = {
             fearLevel: LIB.rand(50),
-            perception: LIB.rand(4,6),
+            perception: LIB.rand(4, 6),
             maxHunger: maxHunger,
-            hunger: maxHunger +1-1, //lazy new value
-            hungriness: LIB.rand(1,10),
+            hunger: maxHunger + 1 - 1, //lazy clone
+            hungriness: LIB.rand(1, 10),
             eating: false,
             rotation: 0,
             opacity: 0.6,
             type: "critter"
         };
         //todo: remove hard scope coupling
-        let critter = LIB.createCritter($scope, x, y, a, LIB.rand(360),  parameters);
-        return critter;
+        return LIB.createCritter($scope, x, y, a, LIB.rand(360), parameters);
     };
     $scope.objs = "";
     $scope.help = [
-        {"key":"W", "f":"Brush: Wall"},
-        {"key":"F", "f":"Brush: Food"},
-        {"key":"A", "f":"Brush: Animal"},
-        {"key":"T", "f":"Brush: Tree"},
-        {"key":"C", "f":"Clear"},
-        {"key":"N", "f":"Generate Land"},
-        {"key":"SPACE", "f":"Draw"},
+        {"key": "W", "desc": "Brush: Wall"},
+        {"key": "F", "desc": "Brush: Food"},
+        {"key": "A", "desc": "Brush: Animal"},
+        {"key": "T", "desc": "Brush: Tree"},
+        {"key": "C", "desc": "Clear"},
+        {"key": "N", "desc": "Generate Land"},
+        {"key": "SPACE", "desc": "Draw"},
     ];
     $scope.id = 0;
     $scope.tileWrapper = LIB.tileWrapper($scope);
     const tileQueue = [];
     const generateCritters = (scope) => {
-        for (let i = 0; i < CONF.crittersPerSquareM*CONF.x*CONF.y; i++) {
+        LIB.repeat(() => {
 
             let x = LIB.rand(CONF.x - 1);
             let y = LIB.rand(CONF.y - 1);
@@ -62,14 +61,14 @@ angular.module("life", []).controller("testCtrl", function ($scope, $timeout, $i
                 y = LIB.rand(CONF.y - 1);
             }
             scope.objs[x][y] = $scope.tileWrapper(...createCritter(x, y));
-        }
+        }, CONF.crittersPerSquareM * CONF.x * CONF.y);
     }
-    const initEngine = ()=> {
+    const initEngine = () => {
         $scope.ready = false;
         $scope.objs = new Array(CONF.x).fill("").map(o => ({}));
         Math.seedrandom(CONF.seed);
-        $scope.coordinateSeeds = new Array(CONF.x).fill("").map(o=>[]);
-        $scope.emptyTiles = new Array(CONF.x).fill("").map(o=>[]);
+        $scope.coordinateSeeds = new Array(CONF.x).fill("").map(o => []);
+        $scope.emptyTiles = new Array(CONF.x).fill("").map(o => []);
         LIB.generateLand($scope);
         generateCritters($scope);
 
@@ -77,25 +76,25 @@ angular.module("life", []).controller("testCtrl", function ($scope, $timeout, $i
          Angular DOM rendering is kinda slow and dunno how to delay it
          Circumventing by doing loading slower
          */
-        $scope.field = new Array(CONF.x).fill("").map(o=>([]));
+        $scope.field = new Array(CONF.x).fill("").map(o => ([]));
+
         //Fills field for the first time.
         function doTimeout(x, i) {
             $timeout(function () {
                 for (let y = 0; y < CONF.y; y++) {
-                    $scope.emptyTiles[x][y] = $scope.tileWrapper(...LIB.emptyTile(x,y,Math.random()));
+                    $scope.emptyTiles[x][y] = $scope.tileWrapper(...LIB.emptyTile(x, y, Math.random()));
                     $scope.field[x][y] = ($scope.objs[x][y]) ? $scope.objs[x][y] : $scope.emptyTiles[x][y];
                 }
             }, i * CONF.rowCalcTime);
         }
-        for(let i = 0; i < CONF.x; i++){
-            doTimeout(i,i);
-        }
+
+        LIB.repeat((i) => doTimeout(i, i), CONF.x);
         Math.seedrandom(new Date().toString());
     };
     // Optimization for getting the objects into $scope.field. Refreshing the whole thing is super slow.
     //todo: remove hard scope coupling
     const render = () => {
-        $scope.field.forEach((xo, x)=>xo.forEach((yo, y)=> {
+        $scope.field.forEach((xo, x) => xo.forEach((yo, y) => {
             if ($scope.objs[x][y]) {
                 if (yo !== $scope.objs[x][y]) {
                     $scope.field[x][y] = ($scope.objs[x][y]);
@@ -109,13 +108,20 @@ angular.module("life", []).controller("testCtrl", function ($scope, $timeout, $i
     const doMoves = () => {
         const moves = [];
         const creates = [];
-        const grid = new Array(CONF.x).fill("").map((o, x) => new Array(CONF.y).fill("").map((o, y) => ($scope.objs[x][y]) ? null : {x: x, y: y, f: 0, g: 0, h: 0, visited: false}));
+        const grid = new Array(CONF.x).fill("").map((o, x) => new Array(CONF.y).fill("").map((o, y) => ($scope.objs[x][y]) ? null : {
+            x: x,
+            y: y,
+            f: 0,
+            g: 0,
+            h: 0,
+            visited: false
+        }));
 
-        $scope.objs.iterateKeys(x => {
-            $scope.objs[x].iterateKeys(y => {
+        $scope.objs.keyList().forEach(x => {
+            $scope.objs[x].keyList().forEach(y => {
                 const o = $scope.objs[x][y];
-                if(o) {
-                    if(o.dead){
+                if (o) {
+                    if (o.dead) {
                         $scope.objs[x][y] = null;
                     } else {
                         if (o.be) {
@@ -150,7 +156,7 @@ angular.module("life", []).controller("testCtrl", function ($scope, $timeout, $i
         });
         //in the object map, set coordinates of created object to the object
         creates.forEach(o => {
-            if(o && $scope.objs[o.x] && !$scope.objs[o.x][o.y]){
+            if (o && $scope.objs[o.x] && !$scope.objs[o.x][o.y]) {
                 $scope.objs[o.x][o.y] = o;
             }
         })
@@ -163,10 +169,10 @@ angular.module("life", []).controller("testCtrl", function ($scope, $timeout, $i
         if (KEYS_DOWN[87]) {
             $scope.paintTool.setBrush(LIB.wallTile);
         }
-        if (KEYS_DOWN[65]){
+        if (KEYS_DOWN[65]) {
             $scope.paintTool.setBrush(createCritter);
         }
-        if (KEYS_DOWN[84]){
+        if (KEYS_DOWN[84]) {
             $scope.paintTool.setBrush(LIB.treeTile);
         }
         if (KEYS_DOWN[67]) {
@@ -176,7 +182,7 @@ angular.module("life", []).controller("testCtrl", function ($scope, $timeout, $i
             LIB.generateLand($scope);
         }
     };
-    const addPaintedTiles= () => {
+    const addPaintedTiles = () => {
         tileQueue.forEach(o => {
             $scope.objs[o.x][o.y] = o.t;
         });
@@ -191,8 +197,8 @@ angular.module("life", []).controller("testCtrl", function ($scope, $timeout, $i
 
         $scope.amounts = {};
         $scope.objs.forEach(x =>
-            x.iterateKeys(y => {
-                if(x[y] !== null) {
+            x.keyList().forEach(y => {
+                if (x[y] !== null) {
                     if (!$scope.amounts[x[y].type]) {
                         $scope.amounts[x[y].type] = 0;
                     }
@@ -204,8 +210,8 @@ angular.module("life", []).controller("testCtrl", function ($scope, $timeout, $i
         $scope.elapsedTime += (new Date().getTime() - $scope.calcTime) / 1000;
         $scope.elapsedTime = +$scope.elapsedTime.toFixed(2);
         $scope.calcTime = new Date().getTime();
-        if($scope.framecount % 10 === 0) {
-            $scope.FPS = (1000*$scope.framecount/(new Date().getTime() - $scope.beginTime)).toFixed(2);
+        if ($scope.framecount % 10 === 0) {
+            $scope.FPS = (1000 * $scope.framecount / (new Date().getTime() - $scope.beginTime)).toFixed(2);
         }
     };
 
@@ -217,7 +223,7 @@ angular.module("life", []).controller("testCtrl", function ($scope, $timeout, $i
     $timeout(() => {
         $scope.ready = true;
         $scope.beginTime = new Date().getTime();
-        $interval(engineLoop, 1000/CONF.FPS);
+        $interval(engineLoop, 1000 / CONF.FPS);
     }, CONF.rowCalcTime * CONF.x);
 
     $scope.paintTool = {
@@ -233,32 +239,32 @@ angular.module("life", []).controller("testCtrl", function ($scope, $timeout, $i
                 this.rem = null;
             }
         },
-        isSetPaintRem: function (){
+        isSetPaintRem: function () {
             return this.rem !== null;
         },
         currBrush: LIB.wallTile,
         setBrush: function (f) {
-            this.previewBrush = $scope.tileWrapper(...f(0,0));
+            this.previewBrush = $scope.tileWrapper(...f(0, 0));
             this.currBrush = f;
         },
         brush: function (x, y) {
             return this.currBrush(x, y)
         },
-        paint: function(o){
+        paint: function (o) {
             const ob = $scope.objs[o.x][o.y];
             if (this.rem && ob && ob.paintable) {
-                  tileQueue.push({x:o.x, y:o.y, t: null});
+                tileQueue.push({x: o.x, y: o.y, t: null});
             } else if (!this.rem && !ob) {
-                const newTile = $scope.tileWrapper(...this.brush(o.x,o.y));
-                tileQueue.push({x:o.x, y:o.y, t: newTile});
+                const newTile = $scope.tileWrapper(...this.brush(o.x, o.y));
+                tileQueue.push({x: o.x, y: o.y, t: newTile});
             }
         }
     };
     $scope.click = function (o) {
-        if(!$scope.clicked){
+        if (!$scope.clicked) {
             $scope.clicked = true;
             $scope.currentTile = o;
-        }else{
+        } else {
             $scope.clicked = false;
         }
         $scope.paintTool.paint(o);
@@ -268,10 +274,10 @@ angular.module("life", []).controller("testCtrl", function ($scope, $timeout, $i
         if (KEYS_DOWN[32]) {
             $scope.paintTool.setPaintRem(!!o.paintable);
             $scope.paintTool.paint(o);
-        } else if($scope.paintTool.isSetPaintRem()) {
+        } else if ($scope.paintTool.isSetPaintRem()) {
             $scope.paintTool.clearPaintRem();
         }
-        if(!$scope.clicked) {
+        if (!$scope.clicked) {
             $scope.currentTile = o;
         }
     }

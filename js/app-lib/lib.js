@@ -6,9 +6,15 @@ LIB.constants = {
 };
 
 //We do it this way, just overriding prototype makes JQuery quite livid.
-Object.defineProperty(Object.prototype, "iterateKeys", {
-    value: function(callback) {
-        Object.keys(this).forEach(callback);
+Object.defineProperty(Object.prototype, "keyList", {
+    value: function() {
+        return Object.keys(this);
+    },
+    enumerable : false
+});
+Object.defineProperty(Object.prototype, "values", {
+    value: function() {
+        return Object.keys(this).map(key => this[key]);
     },
     enumerable : false
 });
@@ -82,7 +88,7 @@ LIB.heap = (comp) => ({
         this.data.push(o);
         this.bubUp(this.data.length - 1);
     },
-    contains: (o) => LIB.coordinatesInArray(o, this.data) >= 0,
+    contains: (o) => LIB.coordinatesInArray(o, this.data),
     size: function () {
         return this.data.length;
     },
@@ -91,7 +97,7 @@ LIB.heap = (comp) => ({
     }
 });
 LIB.sortObjectByKeys = (o) => {
-    Object.keys(o).sort().forEach(function(k) {
+    o.keyList().sort().forEach(function(k) {
         const value = o[k];
         delete o[k];
         o[k] = value;
@@ -113,57 +119,63 @@ LIB.circularArray = (n, def) => {
     }
 }
 LIB.negNormal = (o) => (o > 0) ? 1 : -1;
+LIB.repeat = (callback, n) => {
+    for(let i = 0; i < n; i++){
+        callback(i);
+    }
+};
+LIB.catchAndThrow = (error) => {
+    return function(...args){
+        args.map(o => o || 'UNDEFINED');
+        console.error(...args);
+        throw error;
+    }
+}
 
 //Euclidean stuff
-LIB.nsew = (o, b) => (b.x > o.x) ? "e" : ((b.x < o.x) ? "w" : ((b.y < o.y) ? "n" : "s"));
+LIB.nsew = (curr, compare) => (compare.x > curr.x) ? "e" : ((compare.x < curr.x) ? "w" : ((compare.y < curr.y) ? "n" : "s"));
 LIB.coordinateHashmap = () => {
-    return {
+    const coordinates = {
         data: {},
+    };
+    return Object.assign(coordinates, {
         hash: function (o) {
             return o.x + "-" + o.y;
         },
         push: function (o) {
-            this.data[this.hash(o)] = o;
+            coordinates.data[this.hash(o)] = o;
         },
         remove: function (o) {
-            delete this.data[this.hash(o)]
+            delete coordinates.data[this.hash(o)]
         },
         contains: function (o) {
-            return !!this.data[this.hash(o)]
+            return !!coordinates.data[this.hash(o)]
         },
-        forEach: function (callback) {
-            this.data.forEach(callback);
-        }
-    };
+        forEach: coordinates.data.forEach
+    });
 };
-//todo: description of what is happening here
-LIB.getNeighbors = (e, o, n) => {
+LIB.getNeighbors = (entity, objects, distance) => {
+    //Searches all neighbor spaces to see if they contain a tile
     const ret = [];
-    if (!n) {
-        n = 1;
+    if (!distance) {
+        distance = 1;
     }
 
-    for (var i = -1 * n; i <= 1 * n; i++) {
-        for (var j = -1 * n; j <= 1 * n; j++) {
-            var xn = e.x + i;
-            var yn = e.y + j;
+    for (let i = -1 * distance; i <= 1 * distance; i++) {
+        for (let j = -1 * distance; j <= 1 * distance; j++) {
+            const xn = entity.x + i;
+            const yn = entity.y + j;
             if (xn >= 0 && xn < CONF.x && yn >= 0 && yn < CONF.y) {
-                if (o[xn] && o[xn][yn] && (Math.abs(i) != Math.abs(j) || n > 1)) {
-                    ret.push(o[xn][yn]);
+                if (objects[xn] && objects[xn][yn] && (Math.abs(i) != Math.abs(j) || distance > 1)) {
+                    ret.push(objects[xn][yn]);
                 }
             }
         }
     }
     return ret;
 };
-LIB.coordinatesInArray = (c, a) => {
-    for (i in a) {
-        p = a[i];
-        if (p.x == c.x && p.y == c.y) {
-            return i;
-        }
-    }
-    return -1;
+LIB.coordinatesInArray = (toCheck, array) => {
+    return array.values().some((o) => LIB.eqCoords(toCheck, o));
 };
 LIB.octileDistance = (a, b) => {
     const dx = Math.abs(a.x - b.x);
