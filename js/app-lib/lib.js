@@ -20,14 +20,14 @@ Object.defineProperty(Object.prototype, "values", {
 });
 
 
-//Random generators
+/* Random generators */
 LIB.rand = (a, b) => (b) ? (a + Math.round(Math.random() * (b - a))) : Math.round(Math.random() * (a));
 LIB.randNeg = (i) => (LIB.rand(1) === 1) ? i : -i;
 LIB.flipCoin = () => LIB.rand(10) < 5;
 LIB.randOutOf = (a,b) => LIB.rand(b) <= a;
 LIB.pickRandom = (a) => a[~~(Math.random() * a.length)];
 
-//Helper functions for basic JS stuff
+/* JS helpers */
 LIB.clamp = (a, x, b) => (x < a) ? a : ((x > b) ? b : x);
 LIB.eqCoords = (a, b) => a.x === b.x && a.y === b.y;
 LIB.trueMod = (n, m) => ((n % m) + m) % m;
@@ -132,7 +132,7 @@ LIB.catchAndThrow = (error) => {
     }
 }
 
-//Euclidean stuff
+/* Euclidean stuff */
 LIB.nsew = (curr, compare) => (compare.x > curr.x) ? "e" : ((compare.x < curr.x) ? "w" : ((compare.y < curr.y) ? "n" : "s"));
 LIB.coordinateHashmap = () => {
     const coordinates = {
@@ -185,6 +185,16 @@ LIB.octileDistance = (a, b) => {
 LIB.manhattanDistance = (a, b) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
 LIB.euclideanDistance = (a, b) => Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
 
+/* Game specific helpers */
+//todo: clean up if-hell
+LIB.handleKeys = (keyCodes) => {
+    if (keyCodes[67]) {
+        LIB.clearMap(Game.grid);
+    }
+    if (keyCodes[78]) {
+        LIB.generateLand(Game);
+    }
+};
 
 
 

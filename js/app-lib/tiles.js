@@ -1,7 +1,7 @@
 // tile creation
-LIB.tileWrapper = (scope) => {
+LIB.tileWrapper = (Game) => {
     return function (x, y, character, clr, parameters) {
-        parameters.id = scope.id++;
+        parameters.id = Game.id++;
         let color = {};
         if (typeof clr === "string") {
             color.toString = () => clr;
@@ -70,9 +70,8 @@ LIB.wallTile = (x, y) => [x, y, LIB.randOutOf(1, 10) ? LIB.pickRandom(["🌾", "
 }];
 
 // map generation
-LIB.generateLand = (scope) => {
-    const tempMap = new Array(CONF.x).fill("").map(o => ({}));
-    const tileWrapper = LIB.tileWrapper(scope);
+LIB.generateLand = (Game) => {
+    const tempMap = new Array(CONF.x).fill("").map(o => ({}));;
     LIB.repeat(() => {
         const x = LIB.rand(CONF.x - 1);
         const y = LIB.rand(CONF.y - 1);
@@ -91,8 +90,8 @@ LIB.generateLand = (scope) => {
 
     tempMap.keyList().forEach(x => {
         tempMap[x].keyList().forEach(y => {
-            if (!scope.objs[x][y]) {
-                scope.objs[x][y] = tileWrapper(...LIB.wallTile(x, y));
+            if (!Game.grid[x][y]) {
+                Game.grid[x][y] = Game.tileWrapper(...LIB.wallTile(x, y));
             }
         });
     });
@@ -100,15 +99,15 @@ LIB.generateLand = (scope) => {
     LIB.repeat(() => {
         const x = LIB.rand(0, CONF.x - 1);
         const y = LIB.rand(0, CONF.y - 1);
-        scope.objs[x][y] = tileWrapper(...LIB.treeTile(x, y, {moveCreateAvg: CONF.treeChance}));
+        Game.grid[x][y] = Game.tileWrapper(...LIB.treeTile(x, y, {moveCreateAvg: CONF.treeChance}));
     }, CONF.treesPerSquareM * CONF.x * CONF.y);
 };
-LIB.clearMap = (scope) => {
-    scope.objs.forEach((o, x) => {
+LIB.clearMap = (grid) => {
+    grid.forEach((o, x) => {
         if (o) {
             o.keyList().forEach(y => {
                 if (o[y] && !o[y].be) {
-                    scope.objs[x][y] = null;
+                    grid.objs[x][y] = null;
                 }
             });
         }

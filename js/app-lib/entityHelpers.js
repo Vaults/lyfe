@@ -1,6 +1,6 @@
 //todo: decouple scope
 //todo: revise brain mechanism
-LIB.createCritter = (scope, x, y, character, color, parameters) => [x, y, character, color, $.extend(true, parameters, {
+LIB.createCritter = (x, y, character, color, parameters) => [x, y, character, color, $.extend(true, parameters, {
     sequences: LIB.entitySequences,
     animations: LIB.animations,
     brain: {
@@ -41,8 +41,8 @@ LIB.createCritter = (scope, x, y, character, color, parameters) => [x, y, charac
             //parameters?
         }
     },
-    senseSurroundings: function () {
-        return LIB.getNeighbors(this, scope.objs, this.perception);
+    senseSurroundings: function (grid) {
+        return LIB.getNeighbors(this, grid, this.perception);
     },
     calcFearScore: function (c) {
         //todo: realistic-er
@@ -58,8 +58,8 @@ LIB.createCritter = (scope, x, y, character, color, parameters) => [x, y, charac
     findClosestFood: function () {
         return this.brain.rawMemory.findClosestFood(this);
     },
-    reactToSurroundings: function (grid) {
-        const surr = this.senseSurroundings(this.x, this.y);
+    reactToSurroundings: function (aStarGrid) {
+        const surr = this.senseSurroundings(aStarGrid);
         const threat = this.brain.threat(surr);
         this.brain.absorbSurroundings(surr);
         if (this.brain.threat(surr)) {
@@ -82,7 +82,7 @@ LIB.createCritter = (scope, x, y, character, color, parameters) => [x, y, charac
             if (f) {
                 const nextTo = LIB.euclideanDistance(this, f) === 1;
                 if (this.hunger < this.maxHunger * 0.5 && (!this.eating || !nextTo)) {
-                    this.foodTime(f, grid);
+                    this.foodTime(f, aStarGrid);
                 } else if (this.hunger < this.maxHunger * 0.9 && this.eating && nextTo) {
                     this.sequences.startSequence("moveStill");
                     this.animations.startSequence("shaking");
@@ -94,14 +94,14 @@ LIB.createCritter = (scope, x, y, character, color, parameters) => [x, y, charac
             }
         }
     },
-    foodTime: function (f, grid) {
+    foodTime: function (f, aStarGrid) {
         this.eating = true;
-        grid = $.extend(true, {}, grid);
-        grid[f.x][f.y] = {x: f.x, y: f.y};
-        const par = {grid: grid, from: this, to: {x: f.x, y: f.y}};
+        aStarGrid = $.extend(true, {}, aStarGrid);
+        aStarGrid[f.x][f.y] = {x: f.x, y: f.y};
+        const par = {grid: aStarGrid, from: this, to: {x: f.x, y: f.y}};
         this.sequences.startSequence("moveTo", par);
     },
-    bored: function (grid) {
+    bored: function (aStarGrid) {
         this.sequences.startSequence("default");
         const r = LIB.rand(1 / CONF.seqChance);
         if (r < 1) {
@@ -110,14 +110,14 @@ LIB.createCritter = (scope, x, y, character, color, parameters) => [x, y, charac
             this.sequences.startSequence("moveZigzag", LIB.pickRandom(["n", "w", "s", "e"]));
         } else if (r < 10) {
             const par = {
-                grid: $.extend(true, {}, grid),
+                grid: $.extend(true, {}, aStarGrid),
                 from: this,
                 to: {x: LIB.rand(CONF.x - 1), y: LIB.rand(CONF.y - 1)}
             };
             this.sequences.startSequence("moveTo", par);
         }
     },
-    move: function (grid) {
+    move: function () {
         const mod = this.sequences.run(this);
 
         try {
@@ -137,12 +137,12 @@ LIB.createCritter = (scope, x, y, character, color, parameters) => [x, y, charac
     die: function () {
         this.dead = true;
     },
-    be: function (grid) {
-        this.reactToSurroundings(grid);
+    be: function (aStarGrid) {
+        this.reactToSurroundings(aStarGrid);
         this.hunger -= this.hungriness / 10;
         if (!this.sequences.inSequence()) {
             this.animations.startSequence("default");
-            this.bored(grid);
+            this.bored(aStarGrid);
         }
         if (this.hunger <= 0.25 * this.maxHunger) {
             this.animations.startSequence("rotating");
@@ -151,12 +151,42 @@ LIB.createCritter = (scope, x, y, character, color, parameters) => [x, y, charac
             }
         }
         this.style = this.animations.run(this);
-        return this.move(grid);
+        return this.move(aStarGrid);
     },
     status: function () {
         return ~~((this.hunger / this.maxHunger) * 100);
     }
 })];
+LIB.critter = (x, y) => {
+    const a = LIB.pickRandom(LIB.constants.alpha);
+    const maxHunger = LIB.rand(1000, 2000);
+    const parameters = {
+        fearLevel: LIB.rand(50),
+        perception: LIB.rand(4, 6),
+        maxHunger: maxHunger,
+        hunger: maxHunger + 1 - 1, //lazy clone
+        hungriness: LIB.rand(1, 10),
+        eating: false,
+        rotation: 0,
+        opacity: 0.6,
+        type: "critter"
+    };
+    return LIB.createCritter(x, y, a, LIB.rand(360), parameters);
+};
+LIB.generateCritters = (Game) => {
+    LIB.repeat(() => {
+
+        let x = LIB.rand(CONF.x - 1);
+        let y = LIB.rand(CONF.y - 1);
+
+        const checkIfExists = (a, b) => Game.grid[LIB.clamp(0, a, CONF.x - 1)][LIB.clamp(0, b, CONF.y - 1)];
+        while (checkIfExists(x - 1, y) || checkIfExists(x + 1, y) || checkIfExists(x, y - 1) || checkIfExists(x, y + 1)) {
+            x = LIB.rand(CONF.x - 1);
+            y = LIB.rand(CONF.y - 1);
+        }
+        Game.grid[x][y] = Game.tileWrapper(...LIB.critter(x, y));
+    }, CONF.crittersPerSquareM * CONF.x * CONF.y);
+}
 LIB.sequenceWrapper = function () {
     const initSequence = (seq) => Object.assign({
         running: false,
