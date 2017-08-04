@@ -31,14 +31,7 @@ $(document).mouseup(() => {
 const doMoves = (Game) => {
     const moves = [];
     const creates = [];
-    const aStarGrid = new Array(CONF.x).fill("").map((o, x) => new Array(CONF.y).fill("").map((o, y) => (Game.grid[x][y]) ? null : {
-        x: x,
-        y: y,
-        f: 0,
-        g: 0,
-        h: 0,
-        visited: false
-    }));
+
 
     Game.grid.keyList().forEach(x => {
         Game.grid[x].keyList().forEach(y => {
@@ -48,7 +41,7 @@ const doMoves = (Game) => {
                     Game.grid[x][y] = null;
                 } else {
                     if (o.be) {
-                        const move = o.be(aStarGrid);
+                        const move = o.be(Game.grid);
                         if (move) {
                             moves.push(move);
                         }
@@ -85,7 +78,7 @@ const doMoves = (Game) => {
     })
 };
 const engineLoop = (Game, Renderer) => {
-    LIB.handleKeys(Game.keyList);
+    LIB.handleKeys(Game);
     doMoves(Game);
 
     Game.amounts = {};
@@ -129,7 +122,6 @@ angular.module("life", []).controller("testCtrl", function ($scope, $timeout) {
     //Bind to scope
     $scope.help = CONF.help;
 
-
     //Could be configured to be another renderer if necessary
     const AngularRenderer = {
         init: (Game) => {
@@ -171,7 +163,6 @@ angular.module("life", []).controller("testCtrl", function ($scope, $timeout) {
         }
     };
     initEngine(MainGame, AngularRenderer);
-
 
 
 

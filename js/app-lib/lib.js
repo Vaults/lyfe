@@ -154,19 +154,16 @@ LIB.coordinateHashmap = () => {
         forEach: coordinates.data.forEach
     });
 };
-LIB.getNeighbors = (entity, objects, distance) => {
+LIB.getNeighborsAsList = (entity, objects, distance) => {
     //Searches all neighbor spaces to see if they contain a tile
     const ret = [];
-    if (!distance) {
-        distance = 1;
-    }
 
     for (let i = -1 * distance; i <= 1 * distance; i++) {
         for (let j = -1 * distance; j <= 1 * distance; j++) {
             const xn = entity.x + i;
             const yn = entity.y + j;
             if (xn >= 0 && xn < CONF.x && yn >= 0 && yn < CONF.y) {
-                if (objects[xn] && objects[xn][yn] && (Math.abs(i) != Math.abs(j) || distance > 1)) {
+                if (objects[xn] && objects[xn][yn]) {
                     ret.push(objects[xn][yn]);
                 }
             }
@@ -184,14 +181,23 @@ LIB.octileDistance = (a, b) => {
 }
 LIB.manhattanDistance = (a, b) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
 LIB.euclideanDistance = (a, b) => Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
+LIB.getClosest = (array, comp) => array.sort((a, b) => LIB.euclideanDistance(comp, a) - LIB.euclideanDistance(comp, b))[0];
+LIB.aStarGrid = (grid) => $.extend(true, {} ,new Array(CONF.x).fill("").map((o, x) => new Array(CONF.y).fill("").map((o, y) => (grid[x][y]) ? null : {
+    x: x,
+    y: y,
+    f: 0,
+    g: 0,
+    h: 0,
+    visited: false
+})));
 
-/* Game specific helpers */
-//todo: clean up if-hell
-LIB.handleKeys = (keyCodes) => {
-    if (keyCodes[67]) {
+
+    /* Game specific helpers */
+LIB.handleKeys = (Game) => {
+    if (Game.keyList[67]) {
         LIB.clearMap(Game.grid);
     }
-    if (keyCodes[78]) {
+    if (Game.keyList[78]) {
         LIB.generateLand(Game);
     }
 };

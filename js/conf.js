@@ -1,13 +1,10 @@
-/**
- * Created by Marcel on 21-1-2017.
- */
-var CONF = {
+const DEFAULT_CONF = {
     x: 40, /* THANKS ANGULAR */
     y: 40, /* FOR BEING SO SLOW */
     rowCalcTime: 75,
     crittersPerSquareM: 0.0069,
     moveChance: 10,
-    FPS: 60,
+    FPS: 100,
     treesPerSquareM: 0.01,
     wallFactor: 0.6,
     seqChance: 0.00069,
@@ -16,3 +13,7 @@ var CONF = {
     help: [{"key": "N", "desc": "Generate Land"},
         {"key": "SPACE", "desc": "Draw"}]
 };
+
+//Overridden with test variables.
+var CONF = $.extend(true, DEFAULT_CONF, {
+});

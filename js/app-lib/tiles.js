@@ -14,18 +14,21 @@ LIB.tileWrapper = (Game) => {
             };
         }
         const tile = $.extend({char: character, col: color, x: x, y: y, opacity: 0.5}, parameters);
-        tile.printParam = () => {
-            const p = {};
-            Object.keys(parameters).forEach((key) => {
-                if (typeof tile[key] !== "function") {
-                    p[key] = tile[key];
-                }
-            });
-            return $.extend({x: tile.x, y: tile.y}, p);
-        };
+        if(!tile.printParam) {
+            tile.printParam = () => {
+                const p = {};
+                Object.keys(parameters).forEach((key) => {
+                    if (typeof tile[key] !== "function") {
+                        p[key] = tile[key];
+                    }
+                });
+                return $.extend({x: tile.x, y: tile.y}, p);
+            };
+        }
         return tile;
     }
 };
+//todo: Object-oriented-ish creation
 LIB.treeTile = (x, y, parameters) => [x, y, LIB.pickRandom(["🌳", "🌲", "🌴"]), null, $.extend(parameters, {
     col: {
         hue: 100, sat: 100, br: 80,
@@ -107,7 +110,7 @@ LIB.clearMap = (grid) => {
         if (o) {
             o.keyList().forEach(y => {
                 if (o[y] && !o[y].be) {
-                    grid.objs[x][y] = null;
+                    grid[x][y] = null;
                 }
             });
         }
