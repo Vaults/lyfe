@@ -10,10 +10,21 @@ const DEFAULT_CONF = {
     seqChance: 0.00069,
     treeChance: 2000,
     seed: 1337,
+    food: 1000,
     help: [{"key": "N", "desc": "Generate Land"},
-        {"key": "SPACE", "desc": "Draw"}]
+        {"key": "SPACE", "desc": "Draw"}],
+    critter: () => ({
+        fearLevel: LIB.rand(50),
+        perception: LIB.rand(4, 6),
+        eating: false,
+        rotation: 0,
+        opacity: 0.6,
+        memTime: 2000000,
+    })
 };
 
 //Overridden with test variables.
-var CONF = $.extend(true, DEFAULT_CONF, {
+const CONF = $.extend(true, DEFAULT_CONF, {
+    FPS: 24,
+    treeChance: 1
 });

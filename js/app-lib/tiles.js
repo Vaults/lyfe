@@ -1,76 +1,57 @@
 // tile creation
-LIB.tileWrapper = (Game) => {
-    return function (x, y, character, clr, parameters) {
-        parameters.id = Game.id++;
-        let color = {};
-        if (typeof clr === "string") {
-            color.toString = () => clr;
-        }
-        else {
-            color = {
-                hue: clr, sat: 80, br: 50, toString: function () {
-                    return "hsl(" + this.hue + "," + this.sat + "%," + this.br + "%);";
-                }
-            };
-        }
-        const tile = $.extend({char: character, col: color, x: x, y: y, opacity: 0.5}, parameters);
-        if(!tile.printParam) {
-            tile.printParam = () => {
-                const p = {};
-                Object.keys(parameters).forEach((key) => {
-                    if (typeof tile[key] !== "function") {
-                        p[key] = tile[key];
-                    }
-                });
-                return $.extend({x: tile.x, y: tile.y}, p);
-            };
-        }
-        return tile;
+class FoodTile extends Tile{
+    constructor(id, x, y){
+        super(id, x, y, LIB.pickRandom(["🍏", "🍊", "🍌", "🍉", "🍇", "🍓", "🌽", "🍖"]), "#fffbd3");
+        this.food = CONF.food;
     }
-};
-//todo: Object-oriented-ish creation
-LIB.treeTile = (x, y, parameters) => [x, y, LIB.pickRandom(["🌳", "🌲", "🌴"]), null, $.extend(parameters, {
-    col: {
-        hue: 100, sat: 100, br: 80,
-        toString: function () {
-            return "hsl(" + this.hue + "," + this.sat + "%," + this.br + "%);"
-        }
-    },
-    moveCreateAvg: CONF.treeChance,
-    beCreate: function () {
-        if (LIB.randOutOf(1, this.moveCreateAvg)) {
+    status(){
+        return ~~(this.food / 10)
+    }
+
+}
+class WallTile extends Tile{
+    constructor(id, x, y){
+        super(id, x, y, LIB.randOutOf(1, 10) ? LIB.pickRandom(["🌾", "🌱"]) : " ", "steelblue")
+    }
+}
+class TreeTile extends CreatingTile{
+    constructor(id, x, y){
+        super(id, x, y,  LIB.pickRandom(["🌳", "🌲", "🌴"]), new HSB(100,50,50));
+    }
+    create(tileFactory){
+        if (LIB.randOutOf(1, CONF.treeChance)) {
             const xm = LIB.clamp(0, this.x + LIB.rand(-1, 1), CONF.x - 1);
             const ym = LIB.clamp(0, this.y + LIB.rand(-1, 1), CONF.y - 1);
-            return LIB.foodTile(xm, ym);
+            return tileFactory.foodTile(xm,ym);
         }
-    },
-    type: "tree",
-    contStyle: "border: 1px solid green"
-})];
-LIB.emptyTile = (x, y, isSpecial) => [x, y, " ", "lightgreen", {contStyle: (isSpecial > 0.9) ? "background-image: url('img/grass.png');" : ""}];
-LIB.foodTile = (x, y) => [x, y, LIB.pickRandom(["🍏", "🍊", "🍌", "🍉", "🍇", "🍓", "🌽", "🍖"]), "#fffbd3", {
-    type: "food",
-    paintable: true,
-    food: 1000,
-    die: function () {
-        this.dead = true;
-    },
-    status: function () {
-        return ~~(this.food / 10)
-    },
-    think: function () {
-        this.food -= 0.2;
-        if (this.food < 0) {
-            this.die();
-        }
-    },
-    contStyle: "border: 1px solid burlywood"
-}];
-LIB.wallTile = (x, y) => [x, y, LIB.randOutOf(1, 10) ? LIB.pickRandom(["🌾", "🌱"]) : " ", "steelblue", {
-    type: "wall",
-    paintable: true,
-    contStyle: "border: 1px solid #4070a0"
-}];
+        return null;
+    }
+}
+class TileFactory {
+    constructor(Game){
+        this.Game = Game;
+    }
+    create(tileClass, x, y){
+        return new tileClass(this.Game.id++, x, y);
+    }
+    wallTile(x, y){
+        return this.create(WallTile,x,y);
+    }
+    foodTile(x, y){
+        return this.create(FoodTile,x,y);
+    }
+    treeTile(x, y){
+        return this.create(TreeTile,x,y);
+    }
+    critterTile(x,y){
+        return this.create(CritterTile,x,y);
+    }
+    emptyTile(x,y){
+        return this.create(Tile,x,y);
+    }
+
+};
+
 
 // map generation
 LIB.generateLand = (Game) => {
@@ -94,7 +75,7 @@ LIB.generateLand = (Game) => {
     tempMap.keyList().forEach(x => {
         tempMap[x].keyList().forEach(y => {
             if (!Game.grid[x][y]) {
-                Game.grid[x][y] = Game.tileWrapper(...LIB.wallTile(x, y));
+                Game.grid[x][y] = Game.tileFactory.wallTile(x, y);
             }
         });
     });
@@ -102,7 +83,7 @@ LIB.generateLand = (Game) => {
     LIB.repeat(() => {
         const x = LIB.rand(0, CONF.x - 1);
         const y = LIB.rand(0, CONF.y - 1);
-        Game.grid[x][y] = Game.tileWrapper(...LIB.treeTile(x, y, {moveCreateAvg: CONF.treeChance}));
+        Game.grid[x][y] = Game.tileFactory.treeTile(x, y);
     }, CONF.treesPerSquareM * CONF.x * CONF.y);
 };
 LIB.clearMap = (grid) => {
@@ -115,4 +96,18 @@ LIB.clearMap = (grid) => {
             });
         }
     })
+};
+LIB.generateCritters = (Game) => {
+    LIB.repeat(() => {
+
+        let x = LIB.rand(CONF.x - 1);
+        let y = LIB.rand(CONF.y - 1);
+
+        const checkIfExists = (a, b) => Game.grid[LIB.clamp(0, a, CONF.x - 1)][LIB.clamp(0, b, CONF.y - 1)];
+        while (checkIfExists(x - 1, y) || checkIfExists(x + 1, y) || checkIfExists(x, y - 1) || checkIfExists(x, y + 1)) {
+            x = LIB.rand(CONF.x - 1);
+            y = LIB.rand(CONF.y - 1);
+        }
+        Game.grid[x][y] = Game.tileFactory.critterTile(x,y);
+    }, CONF.crittersPerSquareM * CONF.x * CONF.y);
 };

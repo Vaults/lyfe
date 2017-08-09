@@ -4,14 +4,15 @@
 <html lang="en" ng-app="life">
 <head>
     <meta charset="utf-8">
-    <title>lyfe</title>
+    <title>Life game</title>
     <script src="js/lib/jquery-1.12.0.min.js"></script>
     <script src="js/lib/angular.min.js"></script>
     <script src="js/lib/seedrandom.min.js"></script>
     <link rel="stylesheet" href="css.css" type="text/css">
+    <link rel="shortcut icon" href="img/favicon-wip.png" type="image/x-icon">
 </head>
 
-<body ng-controller="testCtrl" ng-class="(ready)?'':'loading-bg'" draggable="false">
+<body ng-controller="lifeCtrl" ng-class="(ready)?'':'loading-bg'" draggable="false">
 <div class="loading-bg" ng-hide="ready">
     <div class="loading loading-bg-opaque">
         loading <br>
@@ -38,12 +39,12 @@
                 <div ng-repeat="row in field track by $index">
                     <div ng-repeat="c in row track by c.id + c.char">
                         <a ng-click="click(c)" ng-mouseover="mouseover(c)">
-                            <div class="cont" style="background-color: {{c.col.toString()}}; {{c.contStyle}} ">
-                                <div class="statusbar" ng-show="c.status" style="opacity: {{1-(c.status()/100)}}">
+                            <div class="cont" style="background-color: {{c.color.toString()}};">
+                                <div class="statusbar" ng-show="c.status() > 1" style="opacity: {{1-(c.status()/100)}}">
                                     <div class="fill" style="width: {{c.status()}}%"></div>
                                 </div>
                                 <div style="{{c.style}}">
-                                    {{c.char}}
+                                    {{c.character}}
                                 </div>
                             </div>
                         </a>
@@ -63,12 +64,12 @@
                     </td>
                     <td>
                         <div class="cont cont-lg"
-                             style="border: 1px black solid; background-color: {{currentTile.col.toString()}}; {{currentTile.contStyle}}">
-                            <div class="statusbar" ng-show="currentTile.status">
+                             style="border: 1px black solid; background-color: {{currentTile.color.toString()}};">
+                            <div class="statusbar" ng-show="currentTile.status > 1">
                                 <div class="fill" style="width: {{currentTile.status()}}%"></div>
                             </div>
                             <div style="{{currentTile.style}}">
-                                {{currentTile.char}}
+                                {{currentTile.character}}
                             </div>
                         </div>
                         <div class="small" ng-repeat="(key,value) in currentTile.printParam()">
@@ -109,11 +110,14 @@
     </div>
 </div>
 </body>
-
+<!-- APIs and helpers -->
+<script src="js/app-lib/helpers/baseClasses.js"></script>
+<script src="js/app-lib/helpers/lib.js"></script>
+<script src="js/app-lib/helpers/entityHelpers.js"></script>
+<!-- impl -->
 <script src="js/conf.js"></script>
-<script src="js/app-lib/lib.js"></script>
+<script src="js/app-lib/critters.js"></script>
 <script src="js/app-lib/tiles.js"></script>
-<script src="js/app-lib/entityHelpers.js"></script>
 <script src="js/main.js"></script>
 
 </html>

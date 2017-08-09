@@ -1,4 +1,6 @@
 //todo: Add all LIB to angular services/factories
+
+
 const LIB = {};
 LIB.constants = {
     "alpha" : ["😎", "🙈", "🙊", "🐶", "🐺", "🐱", "🐴", "🐷", "🐹", "🐰", "🐼", "🐻"],
@@ -157,15 +159,12 @@ LIB.coordinateHashmap = () => {
 LIB.getNeighborsAsList = (entity, objects, distance) => {
     //Searches all neighbor spaces to see if they contain a tile
     const ret = [];
-
     for (let i = -1 * distance; i <= 1 * distance; i++) {
         for (let j = -1 * distance; j <= 1 * distance; j++) {
             const xn = entity.x + i;
             const yn = entity.y + j;
-            if (xn >= 0 && xn < CONF.x && yn >= 0 && yn < CONF.y) {
-                if (objects[xn] && objects[xn][yn]) {
-                    ret.push(objects[xn][yn]);
-                }
+            if (objects[xn] && objects[xn][yn]) {
+                ret.push(objects[xn][yn]);
             }
         }
     }
@@ -181,15 +180,33 @@ LIB.octileDistance = (a, b) => {
 }
 LIB.manhattanDistance = (a, b) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
 LIB.euclideanDistance = (a, b) => Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
-LIB.getClosest = (array, comp) => array.sort((a, b) => LIB.euclideanDistance(comp, a) - LIB.euclideanDistance(comp, b))[0];
-LIB.aStarGrid = (grid) => $.extend(true, {} ,new Array(CONF.x).fill("").map((o, x) => new Array(CONF.y).fill("").map((o, y) => (grid[x][y]) ? null : {
-    x: x,
-    y: y,
-    f: 0,
-    g: 0,
-    h: 0,
-    visited: false
-})));
+LIB.getClosest = function (array, comp) {
+    const sort = array.sort((a, b) => LIB.euclideanDistance(comp, a) - LIB.euclideanDistance(comp, b));
+    return sort[0];
+};
+LIB.aStarGrid = function(grid) {
+    const node = (x,y) => ({
+        x, y,
+        f: 0,
+        g: 0,
+        h: 0,
+        visited: false
+    });
+
+    return $.extend(true,
+        {},
+        new Array(CONF.x).fill("")
+            .map((o, x) => new Array(CONF.y).fill("")
+                .map((o, y) => (grid[x][y]) ? null : node(x,y) )));
+};
+LIB.successorList = (node) => {
+    const list = [];
+    while (node.p) {
+        list.push(node);
+        node = node.p;
+    }
+    return list.reverse();
+};
 
 
     /* Game specific helpers */
